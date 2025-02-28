@@ -20,15 +20,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "The Knowledge Library",
-  description: "Created by the Whitespac3 team",
+  title: 'Whitespac3 Learning Platform',
+  description: 'An educational platform for online courses',
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
