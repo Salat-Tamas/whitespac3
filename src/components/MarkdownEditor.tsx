@@ -1,14 +1,19 @@
 'use client';
 
 import MDEditor from '@uiw/react-md-editor';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { saveContent } from '@/services/contentService';
 
 export default function MarkdownEditor() {
   const [value, setValue] = useState<string | undefined>("**Hello world!!!**");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isContentEmpty, setIsContentEmpty] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setIsContentEmpty(!value?.trim());
+  }, [value]);
 
   const handleSubmit = async () => {
     if (!value?.trim()) {
@@ -43,6 +48,15 @@ export default function MarkdownEditor() {
 
   return (
     <div className="w-full max-w-4xl mx-auto" data-color-mode="light">
+      <div className="mb-4 w-full flex">
+        <button
+          onClick={handleSubmit}
+          disabled={isSubmitting || isContentEmpty}
+          className="w-full px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400"
+        >
+          {isSubmitting ? "Submitting..." : "Submit Content"}
+        </button>
+      </div>
       <MDEditor
         value={value}
         onChange={setValue}
@@ -51,15 +65,6 @@ export default function MarkdownEditor() {
       />
       <div className="mt-8 p-6 bg-white rounded-lg shadow-lg">
         <MDEditor.Markdown source={value} />
-      </div>
-      <div className="mt-4 flex justify-end">
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400"
-        >
-          {isSubmitting ? "Submitting..." : "Submit Content"}
-        </button>
       </div>
     </div>
   );
