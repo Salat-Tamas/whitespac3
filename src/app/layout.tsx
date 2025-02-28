@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "The Knowledge Library",
+  title: "The Knowledge Vault",
   description: "Created by the Whitespac3 team",
 };
 
