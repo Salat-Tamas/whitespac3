@@ -18,8 +18,8 @@ function WelcomeCard() {
             </p>
           </CardContent>
           <CardFooter>
-            <Link href="/create">
-              <Button>Create Content</Button>
+            <Link href="/create_a_post">
+              <Button>Create a Post</Button>
             </Link>
           </CardFooter>
         </Card>
