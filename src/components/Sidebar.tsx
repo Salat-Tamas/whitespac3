@@ -1,18 +1,13 @@
-import { currentUser } from '@clerk/nextjs/server';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { SignInButton, SignUpButton } from '@clerk/nextjs';
 import { Button } from './ui/button';
-import Link from 'next/link';
-import { Avatar, AvatarImage } from './ui/avatar';
-import { Separator } from './ui/separator';
-import { LinkIcon, MapPinIcon } from 'lucide-react';
 
 async function Sidebar() {
-    
+  // const user = await currentUser();
     return (
         <div className="sticky top-20">
           <Card>
-           SideBar
+           Classes
           </Card>
         </div>
       );

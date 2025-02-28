@@ -9,7 +9,7 @@ export default async function Home() {
         {/* {user ? <CreatePost /> : null} */}
 
         <div className="space-y-6">
-          Heeey
+          Posts
         </div>
        </div>
        <div className="hidden lg:block lg:col-span-4 sticky top-20">
