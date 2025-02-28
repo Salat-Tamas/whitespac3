@@ -1,11 +1,22 @@
-import './globals.css';
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from 'next-themes';
+import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
+import { Toaster } from "react-hot-toast";
+import { ClerkProvider } from "@clerk/nextjs";
+import '@uiw/react-md-editor/markdown-editor.css';
+import '@uiw/react-markdown-preview/markdown.css';
 
-// Initialize the Inter font with Latin subset
-const inter = Inter({ 
-  subsets: ['latin'],
-  display: 'swap',
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -19,16 +30,36 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.className}>
-      <body className="min-h-screen bg-gray-50">
-        <div className="flex min-h-screen flex-col">
-          {/* You could add a global header here if needed */}
-          <main className="flex-grow">
-            {children}
-          </main>
-          {/* You could add a global footer here if needed */}
-        </div>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        >
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="min-h-screen">
+              <Navbar />
+              <main className="py-8">
+                <div className="max-w-7xl mx-auto px-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div className="hidden lg:block lg:col-span-3">
+                      <Sidebar /> 
+                    </div>
+                    <div className="lg:col-span-9">
+                      {children}
+                    </div>
+                  </div>
+                </div>
+              </main>
+            </div>
+            <Toaster />
+          </ThemeProvider>
+        </body>
+      </html>
+      </ClerkProvider>
   );
 }
