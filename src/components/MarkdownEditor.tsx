@@ -213,7 +213,7 @@ function ContentCreator() {
         
         // Redirect to view the new post if we have an ID, otherwise to courses page
         if (result.post?.id) {
-          router.push(`/posts/${result.post.id}`);
+            router.push(`/courses/${courseId}`);
         } else {
           router.push('/courses');
         }
