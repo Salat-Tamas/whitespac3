@@ -78,17 +78,21 @@ function AiSection({ markdown = "" }: AiSectionProps) {
                 "p-3 rounded-lg max-w-[80%]",
                 msg.sender === "AI" 
                   ? "bg-muted rounded-tl-none" 
-                  : "bg-primary text-primary-foreground rounded-tr-none"
+                  : "bg-secondary text-secondary-foreground rounded-tr-none" // Changed from bg-primary
               )}>
                 <div 
                   className="text-sm whitespace-pre-wrap wmde-markdown-var" 
                   data-color-mode={resolvedTheme}
                 >
-                  <MDEditor.Markdown
-                    source={msg.text}
-                    className="!bg-transparent"
-                    style={{ backgroundColor: 'transparent' }}
-                  />
+                  {msg.sender === "You" ? (
+                    <p>{msg.text}</p> // Simple text for user messages
+                  ) : (
+                    <MDEditor.Markdown
+                      source={msg.text}
+                      className="!bg-transparent"
+                      style={{ backgroundColor: 'transparent' }}
+                    />
+                  )}
                 </div>
               </div>
             </div>
