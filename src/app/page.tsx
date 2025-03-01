@@ -57,13 +57,9 @@ export default function HomePage() {
           <CoursesSection />
         </div>
         
-        <div className="lg:col-span-6 space-y-6">
+        <div className="lg:col-span-9 space-y-6">
           <WelcomeCard />
           <PostsSection />
-        </div>
-        
-        <div className="lg:col-span-3 space-y-6">
-          <AiSection />
         </div>
       </div>
     </>

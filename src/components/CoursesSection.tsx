@@ -306,13 +306,6 @@ const handleToggleFavorite = async (courseId: number) => {
                   </div>
                 ))
               )}
-
-              {topics.length > 0 && (
-                <Link href="/courses" className="flex items-center justify-center mt-6 text-sm text-primary hover:underline">
-                  <BookOpen className="h-4 w-4 mr-1" />
-                  View all courses
-                </Link>
-              )}
             </div>
           </div>
         )}
