@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@clerk/clerk-react'; // Client-side import
 import { toast } from 'react-hot-toast';
-import { fetchPosts, togglePostLike } from '@/services/postService';
+import { fetchPosts, togglePostLike, getComments, addComment } from '@/services/postService';
 import { fetchTopicsWithCourses, Course } from '@/services/courseService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { AlertTriangle, ThumbsUp, MessageSquare, Clock, Loader2 } from 'lucide-r
 import Link from 'next/link';
 import MDEditor from "@uiw/react-md-editor";
 import { cn } from "@/lib/utils";
+import { PostComments } from '@/components/PostComments';
 
 type Post = {
   id: string;
@@ -24,6 +25,15 @@ type Post = {
   created_at: string;
   like_count: number;
   liked_by_user: boolean;
+};
+
+type Comment = {
+  user_name: string;
+  id: string;
+  content: string;
+  author_id: string;
+  created_at: string;
+  author_name?: string;
 };
 
 // Helper function for relative time
@@ -62,6 +72,10 @@ export default function CourseDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usingSampleData, setUsingSampleData] = useState(false);
+  
+  // Comment state
+  const [expandedCommentId, setExpandedCommentId] = useState<string | null>(null);
+  const [comments, setComments] = useState<Record<string, Comment[]>>({});
   
   // Load course and posts
   useEffect(() => {
@@ -127,12 +141,7 @@ export default function CourseDetailPage() {
       const currentPost = posts.find(post => post.id === postId);
       if (!currentPost) return;
       
-      const result = await togglePostLike(
-        postId, 
-        userId as string, 
-        currentPost.liked_by_user,
-        currentPost.like_count
-      );
+      const result = await togglePostLike(postId);
       
       if (result.success) {
         setPosts(currentPosts => 
@@ -155,6 +164,53 @@ export default function CourseDetailPage() {
     } catch (error) {
       console.error('Error toggling like:', error);
       toast.error('Failed to update like status', { position: 'top-center' });
+    }
+  };
+
+  // Add this function to handle comment dialog open
+  const handleCommentClick = async (postId: string) => {
+    if (expandedCommentId === postId) {
+      setExpandedCommentId(null);
+      return;
+    }
+    
+    setExpandedCommentId(postId);
+    
+    try {
+      // This is where we fetch comments
+      const fetchedComments = await getComments(postId);
+      setComments(prev => ({
+        ...prev,
+        [postId]: fetchedComments
+      }));
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      toast.error('Failed to load comments');
+    }
+  };
+
+  // Add function to handle new comments
+  const handleAddComment = async (content: string) => {
+    if (!expandedCommentId || !userId) return;
+    
+    try {
+      const newComment = await addComment(expandedCommentId, content, userId);
+      
+      setComments(prev => ({
+        ...prev,
+        [expandedCommentId]: [
+          newComment,
+          ...(prev[expandedCommentId] || [])
+        ]
+      }));
+      
+      toast.success('Comment added!', {
+        position: 'top-center',
+        duration: 1500
+      });
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      toast.error('Failed to add comment');
     }
   };
 
@@ -237,7 +293,7 @@ export default function CourseDetailPage() {
             </div>
             
             {isSignedIn && (
-              <Link href={`/posts/create`}>
+              <Link href={`/posts/create?course_id=${courseId}`}>
                 <Button size="sm">New Post</Button>
               </Link>
             )}
@@ -249,7 +305,7 @@ export default function CourseDetailPage() {
             <div className="text-center py-12">
               <p className="text-muted-foreground mb-4">No posts yet in this course.</p>
               {isSignedIn && (
-                <Link href={`/courses/${courseId}/new-post`}>
+                <Link href={`/posts/create?course_id=${courseId}`}>
                   <Button>Create the First Post</Button>
                 </Link>
               )}
@@ -305,14 +361,29 @@ export default function CourseDetailPage() {
                         </span>
                       </div>
                     </button>
-                    <Link 
-                      href={`/posts/${post.id}#comments`}
-                      className="flex items-center gap-1 hover:text-primary transition"
+                    <button 
+                      onClick={() => handleCommentClick(post.id)}
+                      className={cn(
+                        "flex items-center gap-2 px-2 py-1 rounded-md transition-all",
+                        "hover:bg-primary/10 hover:text-primary",
+                        expandedCommentId === post.id && "bg-primary/5 text-primary"
+                      )}
                     >
                       <MessageSquare className="h-4 w-4" />
                       <span>Comments</span>
-                    </Link>
+                    </button>
                   </div>
+                  
+                  {/* Comments section */}
+                  {expandedCommentId === post.id && (
+                    <div className="mt-4">
+                      <PostComments
+                        comments={comments[post.id] || []}
+                        onAddComment={handleAddComment}
+                        isOpen={true}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
