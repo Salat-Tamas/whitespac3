@@ -1,3 +1,7 @@
+'use server'
+
+import { currentUser } from '@clerk/nextjs/server';
+
 // Course service to fetch course data
 
 // Define types
@@ -79,6 +83,9 @@ export interface Course {
       // Add CSRF token if available
       const csrfToken = process.env.NEXT_PUBLIC_CSRF_TOKEN || 'default-csrf-token';
       headers['csrf-token'] = csrfToken;
+      const user = await currentUser();
+      headers['user-id'] = user?.id ?? '';
+      console.log(user);
       
       // Set up request timeout
       const controller = new AbortController();
