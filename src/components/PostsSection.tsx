@@ -10,6 +10,8 @@ import { fetchPosts, Post, togglePostLike } from '@/services/postService';
 import { fetchTopicsWithCourses, Course, Topic } from '@/services/courseService'; // Import course service
 import { useClerk } from '@clerk/clerk-react';
 import MDEditor from "@uiw/react-md-editor";
+import toast from 'react-hot-toast';
+import { cn } from '@/lib/utils';
 
 // Type for minimal user data
 interface UserData {
@@ -60,7 +62,7 @@ const getRelativeTime = (dateString: string): string => {
 };
 
 export function PostsSection() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, userId } = useAuth();
   const clerk = useClerk();
   const [posts, setPosts] = useState<Post[]>([]);
   const [authors, setAuthors] = useState<Record<string, UserData>>({});
@@ -193,31 +195,43 @@ export function PostsSection() {
   };
 
   const handleLikePost = async (postId: string) => {
-    if (!isSignedIn) {
-      // Direct user to sign in
-      const searchParams = new URLSearchParams();
-      searchParams.set('authAlert', 'You need to sign in to like posts.');
-      window.location.href = `/?${searchParams}`;
+    if (!userId) {
+      toast.error('Please sign in to like posts', { position: 'top-center' });
       return;
     }
 
     try {
-      const result = await togglePostLike(postId);
+      const currentPost = posts.find(post => post.id === postId);
+      if (!currentPost) return;
+
+      const result = await togglePostLike(
+        postId, 
+        userId, 
+        currentPost.liked_by_user,
+        currentPost.like_count
+      );
       
       if (result.success) {
-        // Update posts array with new like status
-        setPosts(posts.map(post => 
-          post.id === postId 
-            ? { 
-                ...post, 
-                liked_by_user: result.liked ?? !post.liked_by_user,
-                like_count: result.likeCount ?? (post.liked_by_user ? post.like_count - 1 : post.like_count + 1)
-              } 
-            : post
-        ));
+        setPosts(currentPosts => 
+          currentPosts.map(post => 
+            post.id === postId 
+              ? { 
+                  ...post, 
+                  liked_by_user: result.liked,
+                  like_count: result.likeCount
+                } 
+              : post
+          )
+        );
+
+        toast.success(result.liked ? 'Post liked!' : 'Post unliked!', {
+          position: 'top-center',
+          duration: 1500
+        });
       }
     } catch (error) {
-      console.error('Error liking post:', error);
+      console.error('Error toggling like:', error);
+      toast.error('Failed to update like status', { position: 'top-center' });
     }
   };
 
@@ -309,13 +323,28 @@ export function PostsSection() {
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <button 
-                      onClick={() => handleLikePost(post.id)} 
-                      className={`flex items-center gap-1 hover:text-primary transition ${
-                        post.liked_by_user ? 'text-primary font-medium' : ''
-                      }`}
+                      onClick={() => handleLikePost(post.id)}
+                      className={cn(
+                        "flex items-center gap-2 px-2 py-1 rounded-md transition-all",
+                        "hover:bg-primary/10",
+                        post.liked_by_user ? 
+                          "text-primary font-medium bg-primary/5 border border-primary/20" : 
+                          "hover:text-primary border border-transparent"
+                      )}
                     >
-                      <ThumbsUp className="h-4 w-4" />
-                      <span>{post.like_count}</span>
+                      <div className="flex items-center gap-2">
+                        <ThumbsUp className={cn(
+                          "h-4 w-4 transition-transform",
+                          post.liked_by_user && "fill-primary",
+                          "hover:scale-110"
+                        )} />
+                        <span className={cn(
+                          "tabular-nums text-sm min-w-[1.5rem]",
+                          post.liked_by_user && "text-primary"
+                        )}>
+                          {post.like_count}
+                        </span>
+                      </div>
                     </button>
                     <Link 
                       href={`/posts/${post.id}#comments`}
