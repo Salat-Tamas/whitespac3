@@ -165,7 +165,7 @@ function ContentCreator() {
   }, [validateForm, isSignedIn]);
 
   // Generate preview from content function
-  const generatePreview = (mdContent: string): string => {
+  const generatePreview = (mdContent: string, maxLines = 8): string => {
     // Remove headers, code blocks and other markdown elements
     const cleanContent = mdContent
       .replace(/^#+ .*$/gm, '')         // Remove headers
@@ -173,15 +173,21 @@ function ContentCreator() {
       .replace(/\[.*\]\(.*\)/gm, '')    // Remove links
       .trim();
     
-    // Find the first paragraph
-    const firstParagraph = cleanContent.split(/\n\s*\n/)[0] || '';
+    // Split into lines and filter out empty lines
+    const lines = cleanContent.split('\n');
     
-    // If the paragraph is too long, truncate it
-    if (firstParagraph.length > 150) {
-      return firstParagraph.substring(0, 150).trim() + '...';
+    // Take only the specified number of lines
+    const previewLines = lines.slice(0, maxLines);
+    
+    // Create the preview
+    const preview = previewLines.join('\n');
+    
+    // Add ellipsis if there were more lines
+    if (lines.length > maxLines) {
+      return preview + '...';
     }
     
-    return firstParagraph;
+    return preview;
   };
 
   // Handle form submission
