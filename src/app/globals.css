@@ -92,3 +92,36 @@
   background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
   cursor: col-resize;
 }
+
+/* Markdown Editor Theme Fixes */
+.wmde-markdown-var {
+  background-color: transparent !important;
+}
+
+.wmde-markdown-var code {
+  background-color: hsl(var(--muted)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+.dark .wmde-markdown-var {
+  color: hsl(var(--foreground)) !important;
+}
+
+.dark .wmde-markdown-var pre {
+  background-color: hsl(var(--muted)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+.dark .wmde-markdown-var code {
+  color: hsl(var(--foreground)) !important;
+}
+
+/* Hide scrollbars but keep functionality */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

@@ -6,6 +6,7 @@ import { Button } from './ui/button';
 import useWebSocket from '@/hooks/useWebSocket';
 import { cn } from '@/lib/utils';
 import MDEditor from '@uiw/react-md-editor';
+import { useTheme } from 'next-themes'; // Add this import
 
 interface AiSectionProps {
   markdown?: string;
@@ -15,6 +16,7 @@ function AiSection({ markdown = "" }: AiSectionProps) {
   const [prompt, setPrompt] = useState('');
   const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://fokakefir.go.ro:80/chat_ws';
   const { messages, sendMessage, isConnected } = useWebSocket({ url: wsUrl });
+  const { resolvedTheme } = useTheme();
 
   const handleSendMessage = () => {
     if (prompt.trim()) {
@@ -78,10 +80,14 @@ function AiSection({ markdown = "" }: AiSectionProps) {
                   ? "bg-muted rounded-tl-none" 
                   : "bg-primary text-primary-foreground rounded-tr-none"
               )}>
-                <div className="text-sm whitespace-pre-wrap">
+                <div 
+                  className="text-sm whitespace-pre-wrap wmde-markdown-var" 
+                  data-color-mode={resolvedTheme}
+                >
                   <MDEditor.Markdown
-                  source={msg.text}
-                  rehypePlugins={[]}
+                    source={msg.text}
+                    className="!bg-transparent"
+                    style={{ backgroundColor: 'transparent' }}
                   />
                 </div>
               </div>
