@@ -399,7 +399,20 @@ export function PostsSection() {
                       <MessageSquare className="h-4 w-4" />
                       <span>Comments</span>
                     </button>
-                    <button className="flex items-center gap-1 hover:text-primary transition">
+                    <button 
+                      onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_URL}/posts/${post.id}`);
+                        toast.success('Share link copied to clipboard', {
+                          position: 'top-center',
+                          duration: 1500
+                        });
+                      } catch (err) {
+                        toast.error('Failed to copy link');
+                      }
+                      }}
+                      className="flex items-center gap-1 hover:text-primary transition"
+                    >
                       <Share2 className="h-4 w-4" />
                       <span>Share</span>
                     </button>
