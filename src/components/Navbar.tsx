@@ -14,11 +14,11 @@ async function Navbar() {
         try {
           console.log('Syncing user data...');
           
-          const apiUrl = process.env.FASTAPI_URL;
+          const apiUrl = process.env.NEXT_PUBLIC_FASTAPI_URL;
           const secretKey = process.env.SECRET_KEY || '';
 
           if (!apiUrl) {
-            throw new Error('FASTAPI_URL is not configured');
+            throw new Error('NEXT_PUBLIC_FASTAPI_URL is not configured');
           }
 
             const response = await fetch(`${apiUrl}/create_user`, {
