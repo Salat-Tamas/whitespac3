@@ -2,9 +2,6 @@
 
 import { currentUser } from '@clerk/nextjs/server';
 
-// Course service to fetch course data
-import { currentUser } from "@clerk/nextjs/server";
-
 // Define types
 export interface Course {
     is_favorite: boolean;
