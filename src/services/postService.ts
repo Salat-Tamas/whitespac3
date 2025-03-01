@@ -440,3 +440,85 @@ export async function getComments(postId: string) {
     return [];
   }
 }
+
+// Add this function to your existing postService.ts
+
+export async function fetchPostById(
+  postId: string
+): Promise<{
+  post: Post | null;
+  error: string | null;
+  usingSampleData: boolean;
+}> {
+  try {
+    // Use environment variable or fallback to hardcoded URL
+    const apiUrl = process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://fokakefir.go.ro';
+    
+    // Prepare headers
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Add CSRF token if available
+    const csrfToken = process.env.NEXT_PUBLIC_CSRF_TOKEN || 'lofasz';
+    headers['csrf-token'] = csrfToken;
+    const user = await currentUser();
+    headers['user-id'] = user?.id ?? '';
+    // Set up request timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+    
+    try {
+      console.log(`Attempting to fetch post with ID: ${postId}`);
+      
+      const response = await fetch(`${apiUrl}/get_post/${postId}`, {
+        method: 'GET',
+        headers,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+      
+      const post = await response.json();
+      
+      return {
+        post,
+        error: null,
+        usingSampleData: false
+      };
+    } catch (fetchError) {
+      console.error('API fetch error:', fetchError);
+      
+      // Use sample data as fallback
+      const samplePost = SAMPLE_POSTS.find(post => post.id === postId);
+      
+      if (!samplePost) {
+        return {
+          post: null,
+          error: 'Post not found',
+          usingSampleData: true
+        };
+      }
+      
+      return {
+        post: samplePost,
+        error: null,
+        usingSampleData: true
+      };
+    }
+  } catch (err) {
+    console.error('Error fetching post by ID:', err);
+    const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+    
+    return {
+      post: null,
+      error: errorMessage,
+      usingSampleData: false
+    };
+  }
+}
+

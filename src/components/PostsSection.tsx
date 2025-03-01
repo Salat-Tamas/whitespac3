@@ -13,6 +13,7 @@ import MDEditor from "@uiw/react-md-editor";
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 import { PostComments } from './PostComments';
+import {useTheme} from 'next-themes';
 
 // Type for minimal user data
 interface UserData {
@@ -84,6 +85,9 @@ export function PostsSection() {
   // Add these new states
   const [expandedCommentId, setExpandedCommentId] = useState<string | null>(null);
   const [comments, setComments] = useState<Record<string, any[]>>({});
+
+  const { resolvedTheme } = useTheme();
+  const isDarkMode = resolvedTheme === 'dark';
 
   // Fetch course data
   useEffect(() => {
@@ -358,7 +362,7 @@ export function PostsSection() {
                       {getCourseName(post.course_id)}
                     </Link>
                   </div>
-                  <div className="prose dark:prose-invert prose-sm max-w-none mb-3" data-color-mode="light">
+                  <div className="prose dark:prose-invert prose-sm max-w-none mb-3" data-color-mode={isDarkMode ? 'dark' : 'light'}>
                     <MDEditor.Markdown 
                       source={post.preview_md} 
                       rehypePlugins={[]}
