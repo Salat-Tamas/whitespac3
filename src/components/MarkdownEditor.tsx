@@ -3,7 +3,6 @@
 import React, { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import MDEditor from "@uiw/react-md-editor";
-import { saveContent } from "@/services/contentService";
 import {
   Card,
   CardContent,
@@ -22,7 +21,9 @@ import {
   fetchTopicsWithCourses,
   Course,
   Topic,
-} from "@/services/courseService"; // Use the proper import
+} from "@/services/courseService";
+import { createPost } from "@/services/postService";
+import { useToast } from "@/components/ui/use-toast";
 
 // Component for displaying grouped course options
 const CourseOptions = ({ topics }: { topics: Topic[] }) => {
@@ -45,6 +46,9 @@ function ContentCreator() {
   // Theme and router
   const { theme } = useTheme();
   const router = useRouter();
+
+  // Toast notifications
+  const { toast } = useToast();
 
   // Authentication
   const { userId, isLoaded, isSignedIn } = useAuth();
@@ -160,6 +164,26 @@ function ContentCreator() {
     }
   }, [validateForm, isSignedIn]);
 
+  // Generate preview from content function
+  const generatePreview = (mdContent: string): string => {
+    // Remove headers, code blocks and other markdown elements
+    const cleanContent = mdContent
+      .replace(/^#+ .*$/gm, '')         // Remove headers
+      .replace(/```[\s\S]*?```/gm, '')  // Remove code blocks
+      .replace(/\[.*\]\(.*\)/gm, '')    // Remove links
+      .trim();
+    
+    // Find the first paragraph
+    const firstParagraph = cleanContent.split(/\n\s*\n/)[0] || '';
+    
+    // If the paragraph is too long, truncate it
+    if (firstParagraph.length > 150) {
+      return firstParagraph.substring(0, 150).trim() + '...';
+    }
+    
+    return firstParagraph;
+  };
+
   // Handle form submission
   const handleSubmit = async () => {
     if (!validateForm()) return;
@@ -167,19 +191,47 @@ function ContentCreator() {
     updateState({ isSubmitting: true });
 
     try {
-      await saveContent({
-        title,
-        courseId: parseInt(courseId),
-        content,
-        authorId: userId || "guest-user",
+      // Generate a preview from the content
+      const preview = generatePreview(content);
+      
+      // Submit using the proper structure expected by the API
+      const result = await createPost({
+        course_id: parseInt(courseId),  // Convert string to number
+        author_id: userId || 'guest-user', // Will be overridden by server with current user id
+        title: title,
+        preview_md: preview, // Use the generated preview
+        content_md: content  // Full content
       });
-
-      // Success notification
-      alert("Content submitted successfully!");
-      router.push("/courses");
+      
+      if (result.success) {
+        // Show success notification
+        toast({
+          title: "Content submitted successfully!",
+          description: "Your post has been created.",
+          variant: "success"
+        });
+        
+        // Redirect to view the new post if we have an ID, otherwise to courses page
+        if (result.post?.id) {
+          router.push(`/posts/${result.post.id}`);
+        } else {
+          router.push('/courses');
+        }
+      } else {
+        // Show error notification
+        toast({
+          title: "Failed to submit content",
+          description: result.error || "An unexpected error occurred",
+          variant: "destructive"
+        });
+      }
     } catch (error) {
       console.error("Error submitting content:", error);
-      alert(`Error: ${error.message || "Something went wrong"}`);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Something went wrong",
+        variant: "destructive"
+      });
     } finally {
       updateState({ isSubmitting: false });
     }
