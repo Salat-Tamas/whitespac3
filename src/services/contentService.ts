@@ -1,37 +1,53 @@
-export async function saveContent(content: string) {
-  // More visible logging with clear markers
-  console.log("==== CONTENT SERVICE: SAVE CONTENT CALLED ====");
-  console.log(`Content length: ${content.length}`);
-  console.log(`Content preview: ${content.substring(0, 50)}...`);
+export async function saveContent(data: {
+  title: string;
+  courseId: number;
+  content: string | undefined;
+  authorId: string | null | undefined;
+}) {
+  // Enhanced validation with better error messages
+  if (!data.title) {
+    throw new Error('Title is required');
+  }
   
+  if (!data.courseId) {
+    throw new Error('Course selection is required');
+  }
+  
+  if (!data.content) {
+    throw new Error('Content cannot be empty');
+  }
+  
+  if (!data.authorId) {
+    throw new Error('Authentication required: No user ID found');
+  }
+
   try {
-    // Log before fetch
-    console.log("==== CONTENT SERVICE: SENDING FETCH REQUEST ====");
-    
+    // Add auth headers and explicitly include authorId
     const response = await fetch('/api/content', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({
+        title: data.title,
+        courseId: data.courseId,
+        content: data.content,
+        authorId: data.authorId,
+        createdAt: new Date().toISOString(),
+      }),
+      // This ensures credentials like cookies are sent with the request
+      credentials: 'same-origin'
     });
 
-    // Log after fetch
-    console.log("==== CONTENT SERVICE: FETCH RESPONSE RECEIVED ====");
-    console.log(`Response status: ${response.status} ${response.statusText}`);
-    
     if (!response.ok) {
-      throw new Error(`Failed to save content: ${response.status} ${response.statusText}`);
+      // Try to get detailed error message from response
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || `Failed to save content: ${response.status}`);
     }
 
-    const result = await response.json();
-    console.log("==== CONTENT SERVICE: RESPONSE DATA ====");
-    console.log(result);
-    
-    return result;
+    return await response.json();
   } catch (error) {
-    console.error("==== CONTENT SERVICE: ERROR ====");
-    console.error(error);
+    console.error('Error saving content:', error);
     throw error;
   }
 }

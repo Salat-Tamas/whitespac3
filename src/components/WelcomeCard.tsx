@@ -18,7 +18,7 @@ function WelcomeCard() {
             </p>
           </CardContent>
           <CardFooter>
-            <Link href="/create_a_post">
+            <Link href="/posts/create">
               <Button>Create a Post</Button>
             </Link>
           </CardFooter>
