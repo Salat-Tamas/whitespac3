@@ -7,7 +7,21 @@ import { BookOpen, PlusCircle, Search, Loader2, AlertTriangle } from 'lucide-rea
 import { Input } from './ui/input';
 import Link from 'next/link';
 import { CourseLink } from './CourseLink';
-import { fetchTopicsWithCourses, Topic } from '@/services/courseService';
+import { CreateCourseModal } from './CreateCourseModal';
+import { useAuth } from '@clerk/nextjs';
+
+// GET request to fetch trending now posts with likes
+// GET request to fetch favorite courses, courses
+
+// When user clicks a course, they are redirected to the course page, where they can select
+// to view the latest, the trending posts in that course or random posts
+
+// A post has a preview section (this has: `title`, `author` - in - `course name`, `description`).
+// On click, the post appears in a new tab, with the full content, comments? 
+
+import { fetchTopicsWithCourses } from '@/services/courseService';
+import { Topic } from '@/types/course';
+import toast from 'react-hot-toast';
 
 export function CoursesSection() {
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -16,6 +30,9 @@ export function CoursesSection() {
   const [searchQuery, setSearchQuery] = useState('');
   const [usingSampleData, setUsingSampleData] = useState(false);
   const [apiAttempted, setApiAttempted] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { userId } = useAuth();
+
 
   useEffect(() => {
     const loadCourses = async () => {
@@ -26,7 +43,18 @@ export function CoursesSection() {
         const { topics: fetchedTopics, error: fetchError, usingSampleData: usingSample } = 
           await fetchTopicsWithCourses();
         
-        setTopics(fetchedTopics);
+        const normalizedTopics = fetchedTopics.map(topic => ({
+          ...topic,
+          name: topic.name || '',
+          courses: topic.courses.map(course => ({
+            ...course,
+            name: course.name || '',
+            description: course.description || '',
+            isFavorite: course.is_favorite
+          }))
+        }));
+        
+        setTopics(normalizedTopics);
         setError(fetchError);
         setUsingSampleData(usingSample);
       } catch (err) {
@@ -49,12 +77,100 @@ export function CoursesSection() {
     )
   })).filter(topic => topic.courses.length > 0);
 
+  const handleCreateCourse = async (course: { name: string; description: string; topic_id: number }) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_URL}/create_course`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'csrf-token': process.env.NEXT_PUBLIC_CSRF_TOKEN || '',
+        },
+        body: JSON.stringify(course),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create course');
+      }
+
+      const newCourse = await response.json();
+      
+      // Update the topics state with the new course
+      setTopics(prevTopics => 
+        prevTopics.map(topic => 
+          topic.id === course.topic_id
+            ? { ...topic, courses: [...topic.courses, newCourse] }
+            : topic
+        )
+      );
+    } catch (error) {
+      console.error('Error creating course:', error);
+      toast.error('Failed to create course');
+    }
+  };
+
+const handleToggleFavorite = async (courseId: number) => {
+    try {
+        // Find the current course to check its favorite status
+        const currentCourse = topics.flatMap(topic => topic.courses).find(course => course.id === courseId);
+        
+        const url = currentCourse?.is_favorite 
+            ? `${process.env.NEXT_PUBLIC_FASTAPI_URL}/remove_favorite_course?course_id=${courseId}`
+            : `${process.env.NEXT_PUBLIC_FASTAPI_URL}/add_favorite_course?course_id=${courseId}`;
+
+        const response = await fetch(url, {
+            method: currentCourse?.is_favorite ? 'DELETE' : 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'csrf-token': process.env.NEXT_PUBLIC_CSRF_TOKEN || '',
+                'user-id': userId || ''
+            }
+        });
+
+        console.log('Request:', {
+            url,
+            method: currentCourse?.is_favorite ? 'DELETE' : 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'csrf-token': process.env.NEXT_PUBLIC_CSRF_TOKEN || '',
+                'user-id': userId || ''
+            }
+        });
+        console.log('Response:', response);
+
+        if (response.ok) {
+            // Update local state
+            setTopics(prevTopics => 
+                prevTopics.map(topic => ({
+                    ...topic,
+                    courses: topic.courses.map(course => 
+                        course.id === courseId 
+                            ? { ...course, is_favorite: !course.is_favorite }
+                            : course
+                    )
+                }))
+            );
+            
+            toast.success('Course favorite status updated!', { position: 'top-center' });
+        } else {
+            throw new Error('Failed to update favorite status');
+        }
+    } catch (error) {
+        console.error('Error toggling favorite:', error);
+        toast.error('Failed to update favorite status', { position: 'top-center' });
+    }
+};
+
   return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle>My Courses</CardTitle>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 w-8 p-0"
+            onClick={() => setIsModalOpen(true)}
+          >
             <PlusCircle className="h-4 w-4" />
           </Button>
         </div>
@@ -132,6 +248,8 @@ export function CoursesSection() {
                         href={`/courses/${course.id}`}
                         title={course.name || ''}
                         description={course.description || "No description available"}
+                        isFavorite={course.is_favorite}
+                        onToggleFavorite={() => handleToggleFavorite(course.id)}
                       />
                     ))}
                   </div>
@@ -148,6 +266,13 @@ export function CoursesSection() {
           </div>
         )}
       </CardContent>
+
+      <CreateCourseModal 
+        open={isModalOpen}
+        setOpen={setIsModalOpen}
+        onCourseCreate={handleCreateCourse}
+        topics={topics}
+      />
     </Card>
   );
 }
