@@ -92,7 +92,7 @@ export interface Course {
         const response = await fetch(`${apiUrl}/topics_with_courses`, {
           method: 'GET',
           headers,
-          mode: 'cors',
+          // mode: 'cors',
           signal: controller.signal
         });
         

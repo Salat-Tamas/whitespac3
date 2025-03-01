@@ -104,7 +104,7 @@ export async function fetchPosts({
       const response = await fetch(url, {
         method: 'GET',
         headers,
-        mode: 'cors',
+        // mode: 'cors',
         signal: controller.signal
       });
       
@@ -194,7 +194,7 @@ export async function getPostById(postId: string): Promise<{
       const response = await fetch(`${apiUrl}/posts/${postId}`, {
         method: 'GET',
         headers,
-        mode: 'cors',
+        // mode: 'cors',
         signal: controller.signal
       });
       
@@ -280,7 +280,7 @@ export async function createPost(postData: Omit<Post, 'id' | 'created_at' | 'lik
         const response = await fetch(`${apiUrl}/create_post`, {
           method: 'POST',
           headers, // Only contains csrf-token, not user-id
-          mode: 'cors',
+          // mode: 'cors',
           body: JSON.stringify({
             course_id: postData.course_id,
             author_id: user.id, // Use the authenticated user ID
@@ -386,7 +386,7 @@ export async function togglePostLike(postId: string): Promise<{
       const response = await fetch(`${apiUrl}/posts/${postId}/like`, {
         method: 'POST',
         headers,
-        mode: 'cors'
+        // mode: 'cors'
       });
       
       if (!response.ok) {
