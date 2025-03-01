@@ -33,7 +33,6 @@ export function CoursesSection() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { userId } = useAuth();
 
-
   useEffect(() => {
     const loadCourses = async () => {
       try {

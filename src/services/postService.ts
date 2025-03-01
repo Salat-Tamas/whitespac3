@@ -349,87 +349,34 @@ export async function createPost(postData: Omit<Post, 'id' | 'created_at' | 'lik
 /**
  * Toggle like status for a post
  */
-export async function togglePostLike(postId: string): Promise<{
-  success: boolean;
-  liked?: boolean;
-  likeCount?: number;
-  error?: string;
-}> {
+export async function togglePostLike(postId: string, userId: string, isCurrentlyLiked: boolean, currentLikeCount: number) {
   try {
-    // Use environment variable or fallback to hardcoded URL
-    const apiUrl = process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://fokakefir.go.ro';
-    
-    // Prepare headers
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    
-    // Add CSRF token if available
-    const csrfToken = process.env.NEXT_PUBLIC_CSRF_TOKEN || 'default-csrf-token';
-    headers['csrf-token'] = csrfToken;
-    
-    // Get authenticated user
-    const user = await currentUser();
-    
-    if (!user || !user.id) {
-      return {
-        success: false,
-        error: 'Authentication required to like a post'
-      };
+    const url = isCurrentlyLiked
+      ? `${process.env.NEXT_PUBLIC_FASTAPI_URL}/remove_like?post_id=${postId}`
+      : `${process.env.NEXT_PUBLIC_FASTAPI_URL}/like_post?post_id=${postId}`;
+
+    const response = await fetch(url, {
+      method: isCurrentlyLiked ? 'DELETE' : 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'csrf-token': process.env.NEXT_PUBLIC_CSRF_TOKEN || '',
+        'user-id': userId
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to ${isCurrentlyLiked ? 'unlike' : 'like'} post`);
     }
-    
-    headers['user-id'] = user.id;
-    
-    try {
-      console.log(`Toggling like for post ID: ${postId}`);
-      
-      const response = await fetch(`${apiUrl}/posts/${postId}/like`, {
-        method: 'POST',
-        headers,
-        // mode: 'cors'
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Server error (${response.status}): ${errorText}`);
-      }
-      
-      const result = await response.json();
-      console.log('Like toggle successful:', result);
-      
-      return {
-        success: true,
-        liked: result.liked,
-        likeCount: result.like_count
-      };
-    } catch (fetchError) {
-      console.error('Error toggling post like:', fetchError);
-      
-      // For demo/development purposes, simulate a successful response with sample data
-      const samplePost = SAMPLE_POSTS.find(post => post.id === postId);
-      if (samplePost) {
-        samplePost.liked_by_user = !samplePost.liked_by_user;
-        samplePost.like_count += samplePost.liked_by_user ? 1 : -1;
-        
-        return {
-          success: true,
-          liked: samplePost.liked_by_user,
-          likeCount: samplePost.like_count,
-          error: 'Using sample data - API unavailable'
-        };
-      }
-      
-      return {
-        success: false,
-        error: `Failed to toggle like: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`
-      };
-    }
-  } catch (err) {
-    console.error('Unexpected error in togglePostLike:', err);
-    
+
+    const data = await response.json();
     return {
-      success: false,
-      error: `Unexpected error: ${err instanceof Error ? err.message : 'Unknown error'}`
+      success: true,
+      liked: !isCurrentlyLiked,
+      // Use server response or calculate new count
+      likeCount: data.like_count ?? (isCurrentlyLiked ? currentLikeCount - 1 : currentLikeCount + 1)
     };
+  } catch (error) {
+    console.error('Error toggling post like:', error);
+    throw error;
   }
 }
