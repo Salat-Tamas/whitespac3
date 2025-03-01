@@ -80,7 +80,7 @@ export interface Course {
       headers['csrf-token'] = csrfToken;
       const user = await currentUser();
       headers['user-id'] = user?.id ?? '';
-      console.log(user);
+      // console.log(user);
       
       // Set up request timeout
       const controller = new AbortController();

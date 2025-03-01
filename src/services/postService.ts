@@ -115,7 +115,7 @@ export async function fetchPosts({
       }
       
       const data: Post[] = await response.json();
-      console.log('API posts data received successfully:', data);
+      // console.log('API posts data received successfully:', data);
       
       return {
         posts: data,
@@ -205,7 +205,7 @@ export async function getPostById(postId: string): Promise<{
       }
       
       const data = await response.json();
-      console.log('API post data received successfully:', data);
+      // console.log('API post data received successfully:', data);
       
       return {
         post: data,

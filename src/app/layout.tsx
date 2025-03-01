@@ -30,7 +30,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider
-      // afterSignInUrl="/api/auth/signin-callback"
+      afterSignInUrl="/api/auth/signin-callback"
       afterSignUpUrl="/api/auth/signin-callback"
     >
       <html lang="en" suppressHydrationWarning>

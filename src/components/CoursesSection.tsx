@@ -123,7 +123,8 @@ const handleToggleFavorite = async (courseId: number) => {
                 'Content-Type': 'application/json',
                 'csrf-token': process.env.NEXT_PUBLIC_CSRF_TOKEN || '',
                 'user-id': userId || ''
-            }
+            },
+            mode: 'cors',
         });
 
         console.log('Request:', {
@@ -249,7 +250,9 @@ const handleToggleFavorite = async (courseId: number) => {
                         title={course.name || ''}
                         description={course.description || "No description available"}
                         isFavorite={course.is_favorite}
-                        onToggleFavorite={() => handleToggleFavorite(course.id)}
+                        onToggleFavorite={() => {
+                            handleToggleFavorite(course.id)
+                        }}
                       />
                     ))}
                   </div>
