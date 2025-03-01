@@ -255,8 +255,6 @@ function ContentCreator() {
             )}
           </div>
           
-          // Update only the select element and its container:
-
 <div className="space-y-2">
   <Label htmlFor="course">Course</Label>
   <div className="relative">
