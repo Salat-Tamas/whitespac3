@@ -60,7 +60,6 @@ export default function HomePage() {
         <div className="lg:col-span-6 space-y-6">
           <WelcomeCard />
           <PostsSection />
-          <LatestPostsSection />
         </div>
         
         <div className="lg:col-span-3 space-y-6">
