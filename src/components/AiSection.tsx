@@ -5,6 +5,7 @@ import { Textarea } from "./ui/textarea"; // Add this import
 import { Button } from './ui/button';
 import useWebSocket from '@/hooks/useWebSocket';
 import { cn } from '@/lib/utils';
+import MDEditor from '@uiw/react-md-editor';
 
 interface AiSectionProps {
   markdown?: string;
@@ -77,7 +78,12 @@ function AiSection({ markdown = "" }: AiSectionProps) {
                   ? "bg-muted rounded-tl-none" 
                   : "bg-primary text-primary-foreground rounded-tr-none"
               )}>
-                <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                <div className="text-sm whitespace-pre-wrap">
+                  <MDEditor.Markdown
+                  source={msg.text}
+                  rehypePlugins={[]}
+                  />
+                </div>
               </div>
             </div>
           ))}
