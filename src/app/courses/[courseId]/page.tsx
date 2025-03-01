@@ -129,19 +129,21 @@ export default function CourseDetailPage() {
 
   // Handle like post - match home page functionality
   const handleLikePost = async (postId: string) => {
-    if (!isSignedIn) {
-      // Direct user to sign in
-      const searchParams = new URLSearchParams();
-      searchParams.set('authAlert', 'You need to sign in to like posts.');
-      window.location.href = `/?${searchParams}`;
+    if (!userId) {
+      toast.error('Please sign in to like posts', { position: 'top-center' });
       return;
     }
 
     try {
       const currentPost = posts.find(post => post.id === postId);
       if (!currentPost) return;
-      
-      const result = await togglePostLike(postId);
+
+      const result = await togglePostLike(
+        postId, 
+        userId, 
+        currentPost.liked_by_user,
+        currentPost.like_count  // Add this parameter
+      );
       
       if (result.success) {
         setPosts(currentPosts => 
