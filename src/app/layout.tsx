@@ -7,6 +7,7 @@ import { Toaster } from "react-hot-toast";
 import { ClerkProvider } from "@clerk/nextjs";
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
+import { createUser } from '@/lib/user-utils';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,10 +30,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      // afterSignInUrl="/api/auth/signin-callback"
+      afterSignUpUrl="/api/auth/signin-callback"
+    >
       <html lang="en" suppressHydrationWarning>
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange suppressHydrationWarning>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <div className="min-h-screen">
               <Navbar />
               <main className="py-8">
