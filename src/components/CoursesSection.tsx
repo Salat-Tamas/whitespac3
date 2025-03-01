@@ -20,7 +20,7 @@ import { useAuth } from '@clerk/nextjs';
 // On click, the post appears in a new tab, with the full content, comments? 
 
 import { fetchTopicsWithCourses } from '@/services/courseService';
-import { Topic } from '@/types/course';
+import { Course, Topic } from '@/types/course';
 import toast from 'react-hot-toast';
 
 export function CoursesSection() {
@@ -32,6 +32,8 @@ export function CoursesSection() {
   const [apiAttempted, setApiAttempted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { userId } = useAuth();
+  const [favoritesList, setFavoritesList] = useState<Course[]>([]);
+
 
   useEffect(() => {
     const loadCourses = async () => {
@@ -52,8 +54,14 @@ export function CoursesSection() {
             isFavorite: course.is_favorite
           }))
         }));
+
+        // Extract favorite courses
+        const favorites = normalizedTopics
+          .flatMap(topic => topic.courses)
+          .filter(course => course.is_favorite);
         
         setTopics(normalizedTopics);
+        setFavoritesList(favorites);
         setError(fetchError);
         setUsingSampleData(usingSample);
       } catch (err) {
@@ -138,17 +146,35 @@ const handleToggleFavorite = async (courseId: number) => {
         console.log('Response:', response);
 
         if (response.ok) {
-            // Update local state
-            setTopics(prevTopics => 
+            // Find the course that was toggled
+            const toggledCourse = topics
+              .flatMap(topic => topic.courses)
+              .find(course => course.id === courseId);
+
+            if (toggledCourse) {
+              // Update topics state
+              setTopics(prevTopics => 
                 prevTopics.map(topic => ({
-                    ...topic,
-                    courses: topic.courses.map(course => 
-                        course.id === courseId 
-                            ? { ...course, is_favorite: !course.is_favorite }
-                            : course
-                    )
+                  ...topic,
+                  courses: topic.courses.map(course => 
+                    course.id === courseId 
+                      ? { ...course, is_favorite: !course.is_favorite }
+                      : course
+                  )
                 }))
-            );
+              );
+
+              // Update favorites list
+              setFavoritesList(prev => {
+                if (toggledCourse.is_favorite) {
+                  // Remove from favorites
+                  return prev.filter(course => course.id !== courseId);
+                } else {
+                  // Add to favorites
+                  return [...prev, { ...toggledCourse, is_favorite: true }];
+                }
+              });
+            }
             
             toast.success('Course favorite status updated!', { position: 'top-center' });
         } else {
@@ -230,41 +256,64 @@ const handleToggleFavorite = async (courseId: number) => {
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
-            {filteredTopics.length === 0 && searchQuery ? (
-              <p className="text-center py-4 text-sm text-muted-foreground">
-                No courses match your search
-              </p>
-            ) : (
-              filteredTopics.map((topic) => (
-                <div key={topic.id} className="mb-4">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                    {topic.name}
-                  </h3>
-                  <div className="space-y-1">
-                    {topic.courses.map((course) => (
-                      <CourseLink
-                        key={course.id}
-                        href={`/courses/${course.id}`}
-                        title={course.name || ''}
-                        description={course.description || "No description available"}
-                        isFavorite={course.is_favorite}
-                        onToggleFavorite={() => {
-                            handleToggleFavorite(course.id)
-                        }}
-                      />
-                    ))}
-                  </div>
+          <div className="space-y-8">
+            {/* Favorites Section */}
+            {favoritesList.length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium text-yellow-500 dark:text-yellow-400 mb-2">
+                  Favorites
+                </h3>
+                <div className="space-y-1 mb-6">
+                  {favoritesList.map((course) => (
+                    <CourseLink
+                      key={course.id}
+                      href={`/courses/${course.id}`}
+                      title={course.name}
+                      description={course.description}
+                      isFavorite={true}
+                      onToggleFavorite={() => handleToggleFavorite(course.id)}
+                    />
+                  ))}
                 </div>
-              ))
+                <div className="border-t border-border my-4" />
+              </div>
             )}
 
-            {topics.length > 0 && (
-              <Link href="/courses" className="flex items-center justify-center mt-6 text-sm text-primary hover:underline">
-                <BookOpen className="h-4 w-4 mr-1" />
-                View all courses
-              </Link>
-            )}
+            {/* Regular Topics Section */}
+            <div className="space-y-4">
+              {filteredTopics.length === 0 && searchQuery ? (
+                <p className="text-center py-4 text-sm text-muted-foreground">
+                  No courses match your search
+                </p>
+              ) : (
+                filteredTopics.map((topic) => (
+                  <div key={topic.id} className="mb-4">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                      {topic.name}
+                    </h3>
+                    <div className="space-y-1">
+                      {topic.courses.map((course) => (
+                        <CourseLink
+                          key={course.id}
+                          href={`/courses/${course.id}`}
+                          title={course.name || ''}
+                          description={course.description || "No description available"}
+                          isFavorite={course.is_favorite}
+                          onToggleFavorite={() => handleToggleFavorite(course.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+
+              {topics.length > 0 && (
+                <Link href="/courses" className="flex items-center justify-center mt-6 text-sm text-primary hover:underline">
+                  <BookOpen className="h-4 w-4 mr-1" />
+                  View all courses
+                </Link>
+              )}
+            </div>
           </div>
         )}
       </CardContent>
