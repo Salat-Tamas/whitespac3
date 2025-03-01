@@ -1,6 +1,6 @@
 export async function getCsrfToken() {
   try {
-    const response = await fetch(`${process.env.SECRET_KEY}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_CSRF_TOKEN}`, {
       credentials: 'include', // Important for cookies
     });
     

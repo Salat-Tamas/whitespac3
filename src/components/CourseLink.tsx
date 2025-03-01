@@ -37,22 +37,22 @@ export function CourseLink({
             </Link>
             <button
               onClick={(e) => {
-                e.preventDefault();
-                onToggleFavorite?.(e);
+              e.preventDefault();
+              onToggleFavorite?.(e);
               }}
               className={cn(
-                isFavorite ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-                "transition-all",
-                "hover:scale-110 transform duration-200",
-                "focus:outline-none",
-                "rounded-full p-1"
+              isFavorite ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+              "transition-all",
+              "hover:scale-110 transform duration-200",
+              "focus:outline-none",
+              "rounded-full p-1"
               )}
             >
               <Star 
-                className={cn(
-                  "h-4 w-4",
-                  isFavorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground hover:text-yellow-400"
-                )}
+              className={cn(
+                "h-4 w-4",
+                isFavorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground hover:text-yellow-400"
+              )}
               />
             </button>
           </div>

@@ -1,4 +1,5 @@
 export interface Course {
+  is_favorite: boolean | undefined;
   id: number;
   name: string;
   description: string;

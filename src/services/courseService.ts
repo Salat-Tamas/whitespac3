@@ -1,14 +1,14 @@
+'use server'
 // Course service to fetch course data
+import { currentUser } from "@clerk/nextjs/server";
 
 // Define types
 export interface Course {
+    is_favorite: boolean;
     id: number;
-    title?: string;
     name?: string;
     description?: string;
-    image?: string;
-    slug?: string;
-  }
+}
   
   export interface Topic {
     id: number;
@@ -18,14 +18,14 @@ export interface Course {
   
   // Sample courses data (replace with API call in production)
   const COURSES: Course[] = [
-    { id: 1, title: 'Introduction to JavaScript' },
-    { id: 2, title: 'Python Fundamentals' },
-    { id: 3, title: 'React Advanced' },
-    { id: 4, title: 'Machine Learning Basics' },
-    { id: 5, title: 'Data Visualization' },
-    { id: 6, title: 'Statistics 101' },
-    { id: 7, title: 'UI/UX Principles' },
-    { id: 8, title: 'Design Systems' }
+    { id: 1, name: 'Introduction to JavaScript', is_favorite: false },
+    { id: 2, name: 'Python Fundamentals', is_favorite: true },
+    { id: 3, name: 'React Advanced', is_favorite: false },
+    { id: 4, name: 'Machine Learning Basics', is_favorite: true },
+    { id: 5, name: 'Data Visualization', is_favorite: false },
+    { id: 6, name: 'Statistics 101', is_favorite: false },
+    { id: 7, name: 'UI/UX Principles', is_favorite: true },
+    { id: 8, name: 'Design Systems', is_favorite: false }
   ];
   
   // Sample data for topics with courses
@@ -34,27 +34,27 @@ export interface Course {
       id: 1,
       name: "Programming",
       courses: [
-        { id: 101, name: "JavaScript Basics", description: "Learn the fundamentals of JavaScript" },
-        { id: 102, name: "Python for Beginners", description: "Introduction to Python programming" },
-        { id: 103, name: "Java Essential Training", description: "Master core Java concepts and syntax" }
+        { id: 101, name: "JavaScript Basics", description: "Learn the fundamentals of JavaScript", is_favorite: false },
+        { id: 102, name: "Python for Beginners", description: "Introduction to Python programming", is_favorite: false},
+        { id: 103, name: "Java Essential Training", description: "Master core Java concepts and syntax", is_favorite: false }
       ]
     },
     {
       id: 2,
       name: "Data Science",
       courses: [
-        { id: 201, name: "Statistics 101", description: "Introduction to statistical analysis" },
-        { id: 202, name: "Machine Learning Fundamentals", description: "Learn basic ML concepts and applications" },
-        { id: 203, name: "Data Visualization", description: "Create compelling visual representations of data" }
+        { id: 201, name: "Statistics 101", description: "Introduction to statistical analysis", is_favorite: false },
+        { id: 202, name: "Machine Learning Fundamentals", description: "Learn basic ML concepts and applications", is_favorite: false },
+        { id: 203, name: "Data Visualization", description: "Create compelling visual representations of data", is_favorite: false }
       ]
     },
     {
       id: 3,
       name: "Web Development",
       courses: [
-        { id: 301, name: "HTML & CSS Basics", description: "Build the structure and style of websites" },
-        { id: 302, name: "React Framework", description: "Create interactive UIs with React" },
-        { id: 303, name: "Backend with Node.js", description: "Server-side JavaScript development" }
+        { id: 301, name: "HTML & CSS Basics", description: "Build the structure and style of websites", is_favorite: false },
+        { id: 302, name: "React Framework", description: "Create interactive UIs with React", is_favorite: false },
+        { id: 303, name: "Backend with Node.js", description: "Server-side JavaScript development", is_favorite: false }
       ]
     }
   ];
@@ -73,12 +73,15 @@ export interface Course {
       
       // Prepare headers
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
+        'Content-Type': 'application/json',};
       
       // Add CSRF token if available
       const csrfToken = process.env.NEXT_PUBLIC_CSRF_TOKEN || 'default-csrf-token';
       headers['csrf-token'] = csrfToken;
+      const user = await currentUser();
+      headers['user-id'] = user?.id || '';
+      console.log('User:', user);
+
       
       // Set up request timeout
       const controller = new AbortController();
