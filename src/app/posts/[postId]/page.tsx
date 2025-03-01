@@ -15,6 +15,7 @@ import { toast } from 'react-hot-toast';
 import { PostComments } from '@/components/PostComments';
 import { Share2 } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import AiSection from '@/components/AiSection';
 
 type Post = {
   id: string;
@@ -117,42 +118,49 @@ export default function PostDetailPage() {
     }
   }, [postId]);
   
-  // Handler for post likes
-  const handleLikePost = async () => {
-    if (!isSignedIn) {
-      // Direct user to sign in
-      const searchParams = new URLSearchParams();
-      searchParams.set('authAlert', 'You need to sign in to like posts.');
-      window.location.href = `/?${searchParams}`;
-      return;
-    }
+// Replace the handleLikePost function with this implementation:
 
-    try {
-      if (!post) return;
-      
-      const result = await togglePostLike(post.id);
-      
-      if (result.success) {
-        setPost(currentPost => {
-          if (!currentPost) return null;
-          
-          return {
-            ...currentPost,
-            liked_by_user: result.liked,
-            like_count: result.likeCount
-          };
-        });
+const handleLikePost = async () => {
+  if (!isSignedIn) {
+    // Direct user to sign in
+    const searchParams = new URLSearchParams();
+    searchParams.set('authAlert', 'You need to sign in to like posts.');
+    window.location.href = `/?${searchParams}`;
+    return;
+  }
+
+  try {
+    if (!post || !userId) return;
+    
+    // Include all required parameters for togglePostLike
+    const result = await togglePostLike(
+      post.id, 
+      userId,
+      post.liked_by_user,
+      post.like_count
+    );
+    
+    if (result.success) {
+      setPost(currentPost => {
+        if (!currentPost) return null;
         
-        toast.success(result.liked ? 'Post liked!' : 'Post unliked!', {
-          position: 'top-center',
-          duration: 1500
-        });
-      }
-    } catch (error) {
-      console.error('Error toggling like:', error);
-      toast.error('Failed to update like status', { position: 'top-center' });
+        return {
+          ...currentPost,
+          liked_by_user: result.liked,
+          like_count: result.likeCount
+        };
+      });
+      
+      toast.success(result.liked ? 'Post liked!' : 'Post unliked!', {
+        position: 'top-center',
+        duration: 1500
+      });
     }
-  };
+  } catch (error) {
+    console.error('Error toggling like:', error);
+    toast.error('Failed to update like status', { position: 'top-center' });
+  }
+};
   
   // Load comments
   const loadComments = async () => {
@@ -256,8 +264,8 @@ export default function PostDetailPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="container mx-auto py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="max-w-4xl mx-auto lg:col-span-9 space-y-6">
         {/* Back Navigation */}
         <div className="mb-4">
           <Button 
@@ -394,6 +402,10 @@ export default function PostDetailPage() {
             </Card>
           </div>
         )}
+      </div>
+
+      <div className="lg:col-span-3 space-y-6">
+        <AiSection />
       </div>
     </div>
   );
