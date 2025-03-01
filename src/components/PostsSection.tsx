@@ -6,12 +6,13 @@ import { Button } from './ui/button';
 import { ThumbsUp, MessageSquare, Share2, Loader2, AlertTriangle, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
-import { fetchPosts, Post, togglePostLike } from '@/services/postService';
+import { fetchPosts, Post, togglePostLike, addComment, getComments } from '@/services/postService';
 import { fetchTopicsWithCourses, Course, Topic } from '@/services/courseService'; // Import course service
 import { useClerk } from '@clerk/clerk-react';
 import MDEditor from "@uiw/react-md-editor";
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
+import { PostComments } from './PostComments';
 
 // Type for minimal user data
 interface UserData {
@@ -79,6 +80,10 @@ export function PostsSection() {
   const [postsLimit, setPostsLimit] = useState(5);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+
+  // Add these new states
+  const [expandedCommentId, setExpandedCommentId] = useState<string | null>(null);
+  const [comments, setComments] = useState<Record<string, any[]>>({});
 
   // Fetch course data
   useEffect(() => {
@@ -235,6 +240,44 @@ export function PostsSection() {
     }
   };
 
+  // Add this function to handle comment dialog open
+  const handleCommentClick = async (postId: string) => {
+    if (expandedCommentId === postId) {
+      setExpandedCommentId(null);
+      return;
+    }
+
+    setExpandedCommentId(postId);
+    try {
+      // This is where we fetch comments
+      const fetchedComments = await getComments(postId);
+      setComments(prev => ({
+        ...prev,
+        [postId]: fetchedComments
+      }));
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      toast.error('Failed to load comments');
+    }
+  };
+
+  // Add function to handle new comments
+  const handleAddComment = async (content: string) => {
+    if (!expandedCommentId || !userId) return;
+
+    try {
+      const newComment = await addComment(expandedCommentId, content, userId);
+      setComments(prev => ({
+        ...prev,
+        [expandedCommentId]: [...(prev[expandedCommentId] || []), newComment]
+      }));
+      toast.success('Comment added successfully');
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      toast.error('Failed to add comment');
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -346,18 +389,27 @@ export function PostsSection() {
                         </span>
                       </div>
                     </button>
-                    <Link 
-                      href={`/posts/${post.id}#comments`}
-                      className="flex items-center gap-1 hover:text-primary transition"
+                    <button 
+                      onClick={() => handleCommentClick(post.id)}
+                      className={cn(
+                        "flex items-center gap-1 transition-colors",
+                        expandedCommentId === post.id ? "text-primary" : "hover:text-primary"
+                      )}
                     >
                       <MessageSquare className="h-4 w-4" />
-                      <span>Comment</span>
-                    </Link>
+                      <span>Comments</span>
+                    </button>
                     <button className="flex items-center gap-1 hover:text-primary transition">
                       <Share2 className="h-4 w-4" />
                       <span>Share</span>
                     </button>
                   </div>
+                  
+                  <PostComments
+                    comments={comments[post.id] || []}
+                    onAddComment={handleAddComment}
+                    isOpen={expandedCommentId === post.id}
+                  />
                 </div>
               ))
             )}

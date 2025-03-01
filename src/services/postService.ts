@@ -388,3 +388,55 @@ export async function togglePostLike(postId: string, userId: string, isCurrently
     throw error;
   }
 }
+
+export async function addComment(postId: string, content: string, userId: string) {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_URL}/add_comment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'csrf-token': process.env.NEXT_PUBLIC_CSRF_TOKEN || '',
+        'user-id': userId
+      },
+      body: JSON.stringify({
+        post_id: postId,
+        content
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to add comment');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error adding comment:', error);
+    throw error;
+  }
+}
+export async function getComments(postId: string) {
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'csrf-token': process.env.NEXT_PUBLIC_CSRF_TOKEN || 'default-csrf-token'
+    };
+
+    // Get authenticated user
+    const user = await currentUser();
+    headers['user-id'] = user?.id ?? '';
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_FASTAPI_URL}/get_comments/?post_id=${postId}`, {
+      method: 'GET',
+      headers
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch comments');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    // Return empty array instead of throwing
+    return [];
+  }
+}
