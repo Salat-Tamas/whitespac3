@@ -21,42 +21,57 @@ const useWebSocket = ({ url, headers }: WebSocketOptions) => {
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    // Add query parameters for headers
-    const wsUrl = new URL(url);
-    if (headers) {
-      Object.entries(headers).forEach(([key, value]) => {
-        wsUrl.searchParams.append(key, value);
-      });
-    }
+    console.log('Initializing WebSocket with URL:', url);
+    console.log('Headers:', headers);
 
-    socketRef.current = new WebSocket(wsUrl.toString());
-
-    socketRef.current.onopen = () => {
-      console.log("WebSocket Connected");
-      setIsConnected(true);
-    };
-
-    socketRef.current.onmessage = (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(event.data);
-        setMessages(prev => [...prev, { sender: "AI", text: data }]);
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
-        setMessages(prev => [...prev, { sender: "AI", text: event.data }]);
+    try {
+      const wsUrl = new URL(url);
+      if (headers) {
+        Object.entries(headers).forEach(([key, value]) => {
+          wsUrl.searchParams.append(key, value);
+        });
       }
-    };
 
-    socketRef.current.onclose = (event: CloseEvent) => {
-      console.log("WebSocket Disconnected:", event.code, event.reason);
-      setIsConnected(false);
-    };
+      console.log('Final WebSocket URL:', wsUrl.toString());
+      socketRef.current = new WebSocket(wsUrl.toString());
 
-    socketRef.current.onerror = (error: Event) => {
-      console.error("WebSocket Error:", error);
-    };
+      socketRef.current.onopen = () => {
+        console.log("WebSocket Connected Successfully");
+        setIsConnected(true);
+      };
+
+      socketRef.current.onmessage = (event: MessageEvent) => {
+        console.log('Received message:', event.data);
+        try {
+          const data = JSON.parse(event.data);
+          setMessages(prev => [...prev, { sender: "AI", text: data }]);
+        } catch (error) {
+          console.error("Error parsing WebSocket message:", error);
+          setMessages(prev => [...prev, { sender: "AI", text: event.data }]);
+        }
+      };
+
+      socketRef.current.onclose = (event: CloseEvent) => {
+        console.log("WebSocket Disconnected:", {
+          code: event.code,
+          reason: event.reason,
+          wasClean: event.wasClean
+        });
+        setIsConnected(false);
+      };
+
+      socketRef.current.onerror = (error: Event) => {
+        console.error("WebSocket Error:", error);
+        setIsConnected(false);
+      };
+
+    } catch (error) {
+      console.error('Error setting up WebSocket:', error);
+    }
 
     return () => {
       if (socketRef.current) {
+        console.log('Closing WebSocket connection');
         socketRef.current.close();
       }
     };
@@ -64,11 +79,11 @@ const useWebSocket = ({ url, headers }: WebSocketOptions) => {
 
   const sendMessage = (markdown: string, prompt: string): boolean => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
-      const message: WebSocketMessage = { 
-        markdown: markdown || "", // Ensure markdown is never undefined
-        prompt: prompt 
+      const message = {
+        markdown: markdown,
+        prompt: prompt
       };
-      console.log('Sending message:', message); // For debugging
+      console.log('Sending message:', message);
       socketRef.current.send(JSON.stringify(message));
       setMessages(prev => [...prev, { sender: "You", text: prompt }]);
       return true;

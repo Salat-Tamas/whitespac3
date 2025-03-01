@@ -1,25 +1,28 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { MessageSquare, Send, Loader2 } from 'lucide-react';
-import { Input } from './ui/input';
+import { Textarea } from "./ui/textarea"; // Add this import
 import { Button } from './ui/button';
 import useWebSocket from '@/hooks/useWebSocket';
 import { cn } from '@/lib/utils';
+import MDEditor from '@uiw/react-md-editor';
 
 interface AiSectionProps {
-  markdown?: string; // Post content markdown
+  markdown?: string;
 }
-
-// hardcode for now: courseId = 71
 
 function AiSection({ markdown = "" }: AiSectionProps) {
   const [prompt, setPrompt] = useState('');
-  const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://fokakefir.go.ro/chat_ws';
+  const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://fokakefir.go.ro:80/chat_ws';
   const { messages, sendMessage, isConnected } = useWebSocket({ url: wsUrl });
 
   const handleSendMessage = () => {
     if (prompt.trim()) {
-      sendMessage(markdown, prompt.trim()); // Send both markdown and prompt
+      console.log('Sending:', {
+        markdown: markdown || "",
+        prompt: prompt.trim()
+      });
+      sendMessage(markdown || "", prompt.trim());
       setPrompt('');
     }
   };
@@ -31,9 +34,17 @@ function AiSection({ markdown = "" }: AiSectionProps) {
     }
   };
 
+  const adjustTextareaHeight = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const textarea = e.target;
+    textarea.style.height = 'auto'; // Reset height
+    const newHeight = Math.min(Math.max(textarea.scrollHeight, 38), 114); // 38px is ~1 line, 114px is ~3 lines
+    textarea.style.height = `${newHeight}px`;
+    setPrompt(e.target.value);
+  };
+
   return (
-    <Card className="h-[calc(100vh-8rem)] flex flex-col">
-      <CardHeader className="pb-3">
+    <Card className="h-full flex flex-col overflow-hidden"> {/* Added overflow-hidden */}
+      <CardHeader className="flex-shrink-0 pb-3"> {/* Added flex-shrink-0 */}
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-primary" />
@@ -49,7 +60,7 @@ function AiSection({ markdown = "" }: AiSectionProps) {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="flex-grow overflow-auto">
+      <CardContent className="flex-1 overflow-y-auto">
         <div className="space-y-4">
           {messages.map((msg, index) => (
             <div key={index} className={cn(
@@ -67,30 +78,39 @@ function AiSection({ markdown = "" }: AiSectionProps) {
                   ? "bg-muted rounded-tl-none" 
                   : "bg-primary text-primary-foreground rounded-tr-none"
               )}>
-                <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                <div className="text-sm whitespace-pre-wrap">
+                  <MDEditor.Markdown
+                  source={msg.text}
+                  rehypePlugins={[]}
+                  />
+                </div>
               </div>
             </div>
           ))}
         </div>
       </CardContent>
 
-      <CardFooter className="border-t pt-3">
-        <div className="flex w-full gap-2">
-          <Input 
+      <CardFooter className="flex-shrink-0 border-t pt-3"> {/* Added flex-shrink-0 */}
+        <div className="flex w-full gap-2 items-start"> {/* Added items-start */}
+          <Textarea 
             placeholder={isConnected ? "Ask anything..." : "Connecting..."}
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={adjustTextareaHeight}
             onKeyDown={handleKeyPress}
             disabled={!isConnected}
-            className="flex-grow"
+            className="flex-grow min-h-[38px] max-h-[114px] resize-none transition-height duration-150 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
+            rows={1}
           />
-          <Button 
-            size="icon" 
-            onClick={handleSendMessage}
-            disabled={!isConnected || !prompt.trim()}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+          <div className="flex-shrink-0 self-stretch flex items-center"> {/* Added wrapper div */}
+            <Button 
+              size="icon"
+              onClick={handleSendMessage}
+              disabled={!isConnected || !prompt.trim()}
+              className="h-[38px]"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardFooter>
     </Card>

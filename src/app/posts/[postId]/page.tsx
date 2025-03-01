@@ -16,6 +16,7 @@ import { PostComments } from '@/components/PostComments';
 import { Share2 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import AiSection from '@/components/AiSection';
+import Split from 'react-split';
 
 type Post = {
   id: string;
@@ -248,7 +249,7 @@ const handleLikePost = async () => {
   // Post not found
   if (!post) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="container mx-auto">
         <Card className="mx-auto max-w-3xl">
           <CardContent className="p-6 text-center">
             <AlertTriangle className="mx-auto mb-4 text-amber-500" size={48} />
@@ -264,149 +265,158 @@ const handleLikePost = async () => {
   }
 
   return (
-    <div className="container mx-auto py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <div className="max-w-4xl mx-auto lg:col-span-9 space-y-6">
-        {/* Back Navigation */}
-        <div className="mb-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-muted-foreground"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-        </div>
-        
-        {/* Post Card */}
-        <Card>
-          {/* Post Header */}
-          <CardHeader>
-            <div className="flex justify-between items-start mb-1">
-              <CardTitle className="text-2xl font-bold">
-                {post.title}
-              </CardTitle>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                <span className="font-medium">{post.author_name}</span>
-                <span> · </span>
-                <Clock className="h-3 w-3 inline mr-1" />
-                <span>{getRelativeTime(post.created_at)}</span>
-                <span> · </span>
-                <span>
-                  Course: <Link href={`/courses/${post.course_id}`} className="text-primary hover:underline">
-                    #{post.course_id}
-                  </Link>
-                </span>
-              </div>
-              
-              {usingSampleData && (
-                <span className="text-xs text-amber-500 font-medium">
-                  (Using sample data)
-                </span>
-              )}
-            </div>
-          </CardHeader>
-          
-          {/* Post Content */}
-          <CardContent className="pt-0">
-            <div className="prose dark:prose-invert prose-headings:font-heading prose-headings:leading-tight max-w-none" data-color-mode={isDarkMode ? 'dark' : 'light'}>
-              <MDEditor.Markdown 
-                source={post.content_md} 
-                rehypePlugins={[]}
-              />
-            </div>
-          </CardContent>
-          
-          {/* Post Actions */}
-          <CardFooter className="border-t pt-4 flex justify-between">
-            <div className="flex space-x-4">
-              <button 
-                onClick={handleLikePost}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all",
-                  "hover:bg-primary/10",
-                  post.liked_by_user ? 
-                    "text-primary font-medium bg-primary/5 border border-primary/20" : 
-                    "hover:text-primary border border-transparent"
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <ThumbsUp className={cn(
-                    "h-4 w-4 transition-transform",
-                    post.liked_by_user && "fill-primary",
-                    "hover:scale-110"
-                  )} />
-                  <span className={cn(
-                    "tabular-nums text-sm",
-                    post.liked_by_user && "text-primary"
-                  )}>
-                    {post.like_count}
-                  </span>
-                </div>
-              </button>
-              
-              <button 
-                onClick={handleCommentsClick}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all",
-                  "hover:bg-primary/10 hover:text-primary",
-                  commentsExpanded && "bg-primary/5 text-primary"
-                )}
-              >
-                <MessageSquare className="h-4 w-4" />
-                <span>Comments</span>
-              </button>
-              
-              <button 
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  toast.success('Link copied to clipboard!', { position: 'top-center' });
-                }}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-all"
-              >
-                <Share2 className="h-4 w-4" />
-                <span>Share</span>
-              </button>
-            </div>
-            
-            {isSignedIn && post.course_id && (
-              <Link 
-                href={`/posts/create?course_id=${post.course_id}`}
-                className="text-primary text-sm hover:underline"
-              >
-                Create a new post in this course
-              </Link>
-            )}
-          </CardFooter>
-        </Card>
-        
-        {/* Comments Section */}
-        {commentsExpanded && (
-          <div className="mt-6" id="comments">
-            <Card>
-              <CardHeader>
-                <CardTitle>Comments</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <PostComments 
-                  comments={comments}
-                  onAddComment={handleAddComment}
-                  isLoading={commentsLoading}
-                  isOpen={true}
-                />
-              </CardContent>
-            </Card>
-          </div>
-        )}
+    <div className="container mx-auto h-[calc(100vh-4rem)] flex flex-col">
+      {/* Back Navigation */}
+      <div className="mb-4 flex-shrink-0">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="text-muted-foreground"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
       </div>
 
-      <div className="lg:col-span-3 space-y-6">
-        <AiSection />
-      </div>
+      <Split 
+        className="split flex flex-1 min-h-0" // Changed height handling
+        sizes={[65, 35]}
+        minSize={400}
+        gutterSize={8}
+        snapOffset={30}
+      >
+        <div className="overflow-y-auto pr-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+          {/* Post Content Card */}
+          <Card>
+            {/* Post Header */}
+            <CardHeader>
+              <div className="flex justify-between items-start mb-1">
+          <CardTitle className="text-2xl font-bold">
+            {post.title}
+          </CardTitle>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+                  <span className="font-medium">{post.author_name}</span>
+                  <span> · </span>
+                  <Clock className="h-3 w-3 inline mr-1" />
+                  <span>{getRelativeTime(post.created_at)}</span>
+                  <span> · </span>
+                  <span>
+                    Course: <Link href={`/courses/${post.course_id}`} className="text-primary hover:underline">
+                      #{post.course_id}
+                    </Link>
+                  </span>
+                </div>
+                
+                {usingSampleData && (
+                  <span className="text-xs text-amber-500 font-medium">
+                    (Using sample data)
+                  </span>
+                )}
+              </div>
+            </CardHeader>
+            
+            {/* Post Content */}
+            <CardContent className="pt-0">
+              <div className="prose dark:prose-invert prose-headings:font-heading prose-headings:leading-tight max-w-none" data-color-mode={isDarkMode ? 'dark' : 'light'}>
+                <MDEditor.Markdown 
+                  source={post.content_md} 
+                  rehypePlugins={[]}
+                />
+              </div>
+            </CardContent>
+            
+            {/* Post Actions */}
+            <CardFooter className="border-t pt-4 flex justify-between">
+              <div className="flex space-x-4">
+                <button 
+                  onClick={handleLikePost}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all",
+                    "hover:bg-primary/10",
+                    post.liked_by_user ? 
+                      "text-primary font-medium bg-primary/5 border border-primary/20" : 
+                      "hover:text-primary border border-transparent"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <ThumbsUp className={cn(
+                      "h-4 w-4 transition-transform",
+                      post.liked_by_user && "fill-primary",
+                      "hover:scale-110"
+                    )} />
+                    <span className={cn(
+                      "tabular-nums text-sm",
+                      post.liked_by_user && "text-primary"
+                    )}>
+                      {post.like_count}
+                    </span>
+                  </div>
+                </button>
+                
+                <button 
+                  onClick={handleCommentsClick}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all",
+                    "hover:bg-primary/10 hover:text-primary",
+                    commentsExpanded && "bg-primary/5 text-primary"
+                  )}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Comments</span>
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast.success('Link copied to clipboard!', { position: 'top-center' });
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-primary/10 hover:text-primary transition-all"
+                >
+                  <Share2 className="h-4 w-4" />
+                  <span>Share</span>
+                </button>
+              </div>
+              
+              {isSignedIn && post.course_id && (
+                <Link 
+                  href={`/posts/create?course_id=${post.course_id}`}
+                  className="text-primary text-sm hover:underline"
+                >
+                  Create a new post in this course
+                </Link>
+              )}
+            </CardFooter>
+          </Card>
+
+          {/* Comments Section */}
+          {commentsExpanded && (
+            <div className="mt-6" id="comments">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Comments</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <PostComments 
+                    comments={comments}
+                    onAddComment={handleAddComment}
+                    isLoading={commentsLoading}
+                    isOpen={true}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+
+        <div className="pl-4 h-full overflow-hidden">
+          <AiSection 
+          markdown={post.content_md}  />
+        </div>
+      </Split>
     </div>
   );
 }
