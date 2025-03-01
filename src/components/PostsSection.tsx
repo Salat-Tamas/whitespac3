@@ -9,6 +9,7 @@ import { useAuth } from '@clerk/nextjs';
 import { fetchPosts, Post, togglePostLike } from '@/services/postService';
 import { fetchTopicsWithCourses, Course, Topic } from '@/services/courseService'; // Import course service
 import { useClerk } from '@clerk/clerk-react';
+import MDEditor from "@uiw/react-md-editor";
 
 // Type for minimal user data
 interface UserData {
@@ -300,8 +301,11 @@ export function PostsSection() {
                       {getCourseName(post.course_id)}
                     </Link>
                   </div>
-                  <div className="prose dark:prose-invert prose-sm max-w-none mb-3">
-                    {post.preview_md}
+                  <div className="prose dark:prose-invert prose-sm max-w-none mb-3" data-color-mode="light">
+                    <MDEditor.Markdown 
+                      source={post.preview_md} 
+                      rehypePlugins={[]}
+                    />
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <button 
