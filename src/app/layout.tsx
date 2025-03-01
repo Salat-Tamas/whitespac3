@@ -7,7 +7,6 @@ import { Toaster } from "react-hot-toast";
 import { ClerkProvider } from "@clerk/nextjs";
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
-import { createUser } from '@/lib/user-utils';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
