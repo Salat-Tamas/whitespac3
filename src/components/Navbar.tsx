@@ -15,7 +15,7 @@ async function Navbar() {
           console.log('Syncing user data...');
           
           const apiUrl = process.env.NEXT_PUBLIC_FASTAPI_URL;
-          const secretKey = process.env.SECRET_KEY || '';
+          const secretKey = process.env.NEXT_PUBLIC_CSRF_TOKEN || '';
 
           if (!apiUrl) {
             throw new Error('NEXT_PUBLIC_FASTAPI_URL is not configured');
