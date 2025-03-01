@@ -58,10 +58,12 @@ const SAMPLE_POSTS: Post[] = [
  */
 export async function fetchPosts({
   sortByLikes = false,
-  limit = 10
+  limit = 10,
+  course_id
 }: {
   sortByLikes?: boolean;
   limit?: number;
+  coruse_id?:number;
 } = {}): Promise<{
   posts: Post[];
   error: string | null;
@@ -95,6 +97,9 @@ export async function fetchPosts({
     }
     if (limit) {
       queryParams.append('limit', limit.toString());
+    }
+    if(course_id !== undefined) {
+      queryParams.append('course_id', course_id.toString());
     }
     
     const url = `${apiUrl}/posts${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
@@ -135,9 +140,12 @@ export async function fetchPosts({
       }
       
       // Return sample data as fallback
-      const sampleData = [...SAMPLE_POSTS];
+      let sampleData = [...SAMPLE_POSTS];
       if (sortByLikes) {
         sampleData.sort((a, b) => b.like_count - a.like_count);
+      }
+      if (course_id !== undefined) {
+        sampleData = sampleData.filter(post => post.course_id === course_id);
       }
       
       return {
