@@ -87,11 +87,13 @@ function AiSection({ markdown = "" }: AiSectionProps) {
                   {msg.sender === "You" ? (
                     <p>{msg.text}</p> // Simple text for user messages
                   ) : (
-                    <MDEditor.Markdown
-                      source={msg.text}
-                      className="!bg-transparent"
-                      style={{ backgroundColor: 'transparent' }}
-                    />
+                    <div data-color-mode={resolvedTheme}>
+                      <MDEditor.Markdown
+                        source={msg.text}
+                        className="markdown-body !bg-transparent prose dark:prose-invert max-w-none"
+                        style={{ backgroundColor: 'transparent' }}
+                      />
+                    </div>
                   )}
                 </div>
               </div>

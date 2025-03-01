@@ -4,6 +4,8 @@ import { currentUser } from '@clerk/nextjs/server';
 
 // Define types for posts and related data
 export interface Post {
+  author_name: ReactNode;
+  name: ReactNode;
   id: string;
   course_id: number;
   author_id: string;

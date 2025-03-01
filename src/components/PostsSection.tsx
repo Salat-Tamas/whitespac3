@@ -9,7 +9,7 @@ import { useAuth } from '@clerk/nextjs';
 import { fetchPosts, Post, togglePostLike, addComment, getComments } from '@/services/postService';
 import { fetchTopicsWithCourses, Course, Topic } from '@/services/courseService'; // Import course service
 import { useClerk } from '@clerk/clerk-react';
-import MDEditor from "@uiw/react-md-editor";
+import MDEditor, { orderedListCommand } from "@uiw/react-md-editor";
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 import { PostComments } from './PostComments';
@@ -355,19 +355,19 @@ export function PostsSection() {
                   </h3>
                   <div className="text-sm text-muted-foreground mb-3">
                     <span className="font-medium">
-                      {formatAuthorName(authors[post.author_id])}
+                      {post.author_name}
                     </span>
                     <span> in </span>
                     <Link href={`/courses/${post.course_id}`} className="text-primary hover:underline">
                       {getCourseName(post.course_id)}
                     </Link>
                   </div>
-                  <div className="prose dark:prose-invert prose-sm max-w-none mb-3" data-color-mode={isDarkMode ? 'dark' : 'light'}>
+                    <div className="prose dark:prose-invert prose-sm max-w-none mb-3 p-4 bg-white dark:bg-[#0d1117] rounded-md" data-color-mode={isDarkMode ? 'dark' : 'light'}>
                     <MDEditor.Markdown 
                       source={post.preview_md} 
                       rehypePlugins={[]}
                     />
-                  </div>
+                    </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <button 
                       onClick={() => handleLikePost(post.id)}

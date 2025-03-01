@@ -116,6 +116,43 @@
   color: hsl(var(--foreground)) !important;
 }
 
+/* Markdown Theme Fixes */
+.markdown-body {
+  background-color: transparent !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.markdown-body pre,
+.markdown-body code {
+  background-color: hsl(var(--muted)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+.dark .markdown-body pre,
+.dark .markdown-body code {
+  color: hsl(var(--foreground)) !important;
+}
+
+.markdown-body p,
+.markdown-body li,
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  color: hsl(var(--foreground)) !important;
+}
+
+.markdown-body a {
+  color: hsl(var(--primary)) !important;
+}
+
+.markdown-body blockquote {
+  color: hsl(var(--muted-foreground)) !important;
+  border-left-color: hsl(var(--border)) !important;
+}
+
 /* Hide scrollbars but keep functionality */
 .hide-scrollbar {
   scrollbar-width: none;

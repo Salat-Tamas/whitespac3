@@ -352,12 +352,12 @@ export default function CourseDetailPage() {
                           {post.author_name || `User ${post.author_id.substring(0, 6)}`}
                         </span>
                       </div>
-                      <div className="prose dark:prose-invert prose-sm max-w-none mb-3" data-color-mode={isDarkMode ? 'dark' : 'light'}>
-                        <MDEditor.Markdown 
-                          source={post.preview_md} 
-                          rehypePlugins={[]}
-                        />
-                      </div>
+                      <div className="prose dark:prose-invert prose-sm max-w-none mb-3 p-4 bg-white dark:bg-[#0d1117] rounded-md" data-color-mode={isDarkMode ? 'dark' : 'light'}>
+                    <MDEditor.Markdown 
+                      source={post.preview_md} 
+                      rehypePlugins={[]}
+                    />
+                    </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <button 
                           onClick={() => handleLikePost(post.id)}
