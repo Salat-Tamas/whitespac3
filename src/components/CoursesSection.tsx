@@ -7,50 +7,7 @@ import { BookOpen, PlusCircle, Search, Loader2, AlertTriangle } from 'lucide-rea
 import { Input } from './ui/input';
 import Link from 'next/link';
 import { CourseLink } from './CourseLink';
-
-// Define interfaces for the API response
-interface Course {
-  id: number;
-  name: string;
-  description: string;
-}
-
-interface Topic {
-  id: number;
-  name: string;
-  courses: Course[];
-}
-
-// Sample data for fallback
-const SAMPLE_DATA: Topic[] = [
-  {
-    id: 1,
-    name: "Programming",
-    courses: [
-      { id: 101, name: "JavaScript Basics", description: "Learn the fundamentals of JavaScript" },
-      { id: 102, name: "Python for Beginners", description: "Introduction to Python programming" },
-      { id: 103, name: "Java Essential Training", description: "Master core Java concepts and syntax" }
-    ]
-  },
-  {
-    id: 2,
-    name: "Data Science",
-    courses: [
-      { id: 201, name: "Statistics 101", description: "Introduction to statistical analysis" },
-      { id: 202, name: "Machine Learning Fundamentals", description: "Learn basic ML concepts and applications" },
-      { id: 203, name: "Data Visualization", description: "Create compelling visual representations of data" }
-    ]
-  },
-  {
-    id: 3,
-    name: "Web Development",
-    courses: [
-      { id: 301, name: "HTML & CSS Basics", description: "Build the structure and style of websites" },
-      { id: 302, name: "React Framework", description: "Create interactive UIs with React" },
-      { id: 303, name: "Backend with Node.js", description: "Server-side JavaScript development" }
-    ]
-  }
-];
+import { fetchTopicsWithCourses, Topic } from '@/services/courseService';
 
 export function CoursesSection() {
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -61,85 +18,33 @@ export function CoursesSection() {
   const [apiAttempted, setApiAttempted] = useState(false);
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    const loadCourses = async () => {
       try {
         setIsLoading(true);
-        
-        // Use environment variable or fallback to hardcoded URL
-        const apiUrl = process.env.NEXT_PUBLIC_FASTAPI_URL || 'http://fokakefir.go.ro';
-        
-        console.log(`Attempting to fetch from: ${apiUrl}/topics_with_courses`);
         setApiAttempted(true);
         
-        // Prepare headers
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
+        const { topics: fetchedTopics, error: fetchError, usingSampleData: usingSample } = 
+          await fetchTopicsWithCourses();
         
-        // Add CSRF token if available
-        const csrfToken = process.env.NEXT_PUBLIC_CSRF_TOKEN || 'default-csrf-token';
-        headers['csrf-token'] = csrfToken;
-        
-        // Set up request timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000); // Shorter timeout (3s)
-        
-        try {
-          const response = await fetch(`${apiUrl}/topics_with_courses`, {
-            method: 'GET',
-            headers,
-            // No credentials: 'include' to avoid CORS issues
-            mode: 'cors',
-            signal: controller.signal
-          });
-          
-          clearTimeout(timeoutId);
-          
-          if (!response.ok) {
-            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-          }
-          
-          const data: Topic[] = await response.json();
-          console.log('API data received successfully:', data);
-          setTopics(data);
-          setError(null);
-          setUsingSampleData(false);
-        } catch (fetchError: any) {
-          console.warn(`API request failed: ${fetchError.message}`);
-          
-          // Handle specific error types
-          if (fetchError.name === 'AbortError') {
-            console.log('Request timed out - using sample data');
-          } else if (fetchError.message.includes('Failed to fetch')) {
-            console.log('Network error - using sample data');
-          } else {
-            console.log('Other fetch error - using sample data');
-          }
-          
-          // Fall back to sample data
-          setTopics(SAMPLE_DATA);
-          setUsingSampleData(true);
-        }
+        setTopics(fetchedTopics);
+        setError(fetchError);
+        setUsingSampleData(usingSample);
       } catch (err) {
-        console.error('Error in fetch operation:', err);
+        console.error('Unexpected error in CoursesSection:', err);
         setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-        
-        // Always fall back to sample data on any error
-        setTopics(SAMPLE_DATA);
-        setUsingSampleData(true);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchCourses();
+    loadCourses();
   }, []);
 
   // Filter courses based on search query
   const filteredTopics = topics.map(topic => ({
     ...topic,
     courses: topic.courses.filter(course => 
-      course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      course.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (course.description && course.description.toLowerCase().includes(searchQuery.toLowerCase()))
     )
   })).filter(topic => topic.courses.length > 0);
@@ -225,7 +130,7 @@ export function CoursesSection() {
                       <CourseLink
                         key={course.id}
                         href={`/courses/${course.id}`}
-                        title={course.name}
+                        title={course.name || ''}
                         description={course.description || "No description available"}
                       />
                     ))}

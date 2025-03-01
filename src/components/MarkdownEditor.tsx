@@ -1,73 +1,94 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MDEditor from '@uiw/react-md-editor';
 import { saveContent } from '@/services/contentService';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Send, FileText, AlertCircle } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from './ui/button';
+import { Send, FileText, AlertCircle, Loader2 } from 'lucide-react';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 import { useAuth } from '@clerk/nextjs';
 import { useTheme } from 'next-themes';
+import { fetchTopicsWithCourses, Course, Topic } from '@/services/courseService'; // Use the proper import
 
-// Sample course data - replace with your actual data
-const COURSES = [
-  { id: 1, title: 'Introduction to JavaScript' },
-  { id: 2, title: 'Python Fundamentals' },
-  { id: 3, title: 'React Advanced' },
-  { id: 4, title: 'Machine Learning Basics' },
-  { id: 5, title: 'Data Visualization' },
-  { id: 6, title: 'Statistics 101' },
-  { id: 7, title: 'UI/UX Principles' },
-  { id: 8, title: 'Design Systems' }
-];
+// Component for displaying grouped course options
+const CourseOptions = ({ topics }: { topics: Topic[] }) => {
+  return (
+    <>
+      {topics.map((topic) => (
+        <optgroup key={topic.id} label={topic.name}>
+          {topic.courses.map((course) => (
+            <option key={course.id} value={course.id.toString()}>
+              {course.name || course.title || `Course ${course.id}`}
+            </option>
+          ))}
+        </optgroup>
+      ))}
+    </>
+  );
+};
 
-function MarkdownEditor() {
-  // IMPORTANT: All hooks must be called at the top level, in the same order, every time
-  
-  // Theme hook
+function ContentCreator() {
+  // Theme and router
   const { theme } = useTheme();
-  
-  // Router hook
   const router = useRouter();
   
-  // Auth hook
+  // Authentication
   const { userId, isLoaded, isSignedIn } = useAuth();
   
-  // Form state hooks
-  const [title, setTitle] = useState('');
-  const [courseId, setCourseId] = useState('');
-  const [content, setContent] = useState("**Hello world!**\n\nStart writing your content here...");
+  // All state in one reducer to avoid hook ordering issues
+  const [state, setState] = React.useState({
+    title: '',
+    courseId: '',
+    content: "**Hello world!**\n\nStart writing your content here...",
+    isSubmitting: false,
+    mounted: false,
+    activeTab: 'edit',
+    formErrors: {},
+    authRedirecting: false
+  });
   
-  // UI state hooks
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formErrors, setFormErrors] = useState({});
-  const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState('edit');
+  // Topics and courses state
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [usingSampleData, setUsingSampleData] = useState(false);
+  
+  // Destructure state for easier access
+  const { 
+    title, courseId, content, isSubmitting, mounted, 
+    activeTab, formErrors, authRedirecting
+  } = state;
 
-  // Set mounted state (always call this first)
+  // Update state helper function
+  const updateState = (updates) => {
+    setState(prev => ({ ...prev, ...updates }));
+  };
+
+  // Fetch courses when component mounts
   useEffect(() => {
-    setMounted(true);
+    async function loadCoursesFromTopics() {
+      try {
+        setCoursesLoading(true);
+        
+        // Use the fetchTopicsWithCourses function from courseService
+        const { topics: fetchedTopics, usingSampleData } = await fetchTopicsWithCourses();
+        
+        setTopics(fetchedTopics);
+        setUsingSampleData(usingSampleData);
+      } catch (error) {
+        console.error('Error loading courses in MarkdownEditor:', error);
+      } finally {
+        setCoursesLoading(false);
+      }
+    }
+    
+    loadCoursesFromTopics();
   }, []);
 
-  // Check authentication status when the component loads
-  useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      const searchParams = new URLSearchParams();
-      searchParams.set('authAlert', 'You need to sign in to create content.');
-      router.push(`/?${searchParams}`);
-    }
-  }, [isLoaded, isSignedIn, router]);
-  
-  // Validate form when any field changes
-  useEffect(() => {
-    validateForm();
-  }, [title, courseId, content]);
-
-  // Validate the form fields
-  const validateForm = () => {
+  // Validate the form
+  const validateForm = useCallback(() => {
     const errors = {};
     
     if (!title.trim()) {
@@ -79,19 +100,52 @@ function MarkdownEditor() {
     }
     
     if (!content.trim() || content === "**Hello world!**\n\nStart writing your content here...") {
-      errors.content = 'Content is required';
+      errors.content = 'Please add meaningful content to your post';
     }
     
-    setFormErrors(errors);
+    updateState({ formErrors: errors });
     return Object.keys(errors).length === 0;
-  };
+  }, [title, courseId, content]);
 
+  // Component mounted
+  useEffect(() => {
+    updateState({ mounted: true });
+  }, []);
+
+  // Authentication check with immediate redirection
+  useEffect(() => {
+    // Only check if auth has loaded
+    if (isLoaded) {
+      // If not signed in, redirect immediately
+      if (!isSignedIn) {
+        updateState({ authRedirecting: true });
+        
+        // Prepare redirect params
+        const searchParams = new URLSearchParams();
+        searchParams.set('authAlert', 'You need to sign in to create content.');
+        
+        // Use a short timeout to allow state update before redirect
+        setTimeout(() => {
+          router.push(`/?${searchParams}`);
+        }, 10);
+      }
+    }
+  }, [isLoaded, isSignedIn, router]);
+  
+  // Validate form on field changes - only if user is authenticated
+  useEffect(() => {
+    if (isSignedIn) {
+      validateForm();
+    }
+  }, [validateForm, isSignedIn]);
+
+  // Handle form submission
   const handleSubmit = async () => {
     if (!validateForm()) return;
     
+    updateState({ isSubmitting: true });
+    
     try {
-      setIsSubmitting(true);
-      
       await saveContent({
         title,
         courseId: parseInt(courseId),
@@ -99,21 +153,31 @@ function MarkdownEditor() {
         authorId: userId || 'guest-user'
       });
       
-      // Show success message and redirect
+      // Success notification
       alert('Content submitted successfully!');
       router.push('/courses');
     } catch (error) {
       console.error('Error submitting content:', error);
-      alert(`Error: ${error.message}`);
+      alert(`Error: ${error.message || 'Something went wrong'}`);
     } finally {
-      setIsSubmitting(false);
+      updateState({ isSubmitting: false });
     }
   };
 
-  // Determine editor color mode based on theme
+  // Editor color mode based on theme
   const editorColorMode = !mounted ? 'light' : theme === 'dark' ? 'dark' : 'light';
   
-  // Show loading state while authentication is being checked
+  // Show authentication redirect state
+  if (authRedirecting) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">Redirecting to sign in...</p>
+      </div>
+    );
+  }
+  
+  // Loading state for auth
   if (!isLoaded) {
     return (
       <div className="flex justify-center items-center min-h-[80vh]">
@@ -122,6 +186,45 @@ function MarkdownEditor() {
     );
   }
   
+  // Prevent rendering the form completely if not signed in
+  if (!isSignedIn) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-warning" />
+              Authentication Required
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>You need to be signed in to create content.</p>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              className="w-full" 
+              onClick={() => router.push('/')}
+            >
+              Return to Homepage
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  // Get all available courses from topics for flat display (alternative approach)
+  const allCourses: Course[] = React.useMemo(() => {
+    const courses: Course[] = [];
+    topics.forEach(topic => {
+      topic.courses.forEach(course => {
+        courses.push(course);
+      });
+    });
+    return courses;
+  }, [topics]);
+
+  // Only render form for authenticated users
   return (
     <Card>
       <CardHeader>
@@ -135,20 +238,6 @@ function MarkdownEditor() {
       </CardHeader>
       
       <CardContent className="space-y-6">
-        {!isSignedIn && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 rounded-lg p-4">
-            <div className="flex items-start">
-              <AlertCircle className="h-5 w-5 mt-0.5 mr-2 flex-shrink-0" />
-              <div>
-                <h3 className="font-medium">Authentication Required</h3>
-                <p className="text-sm mt-1">
-                  You must be signed in to create content. Please sign in and try again.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
@@ -156,7 +245,7 @@ function MarkdownEditor() {
               id="title"
               placeholder="Enter a descriptive title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => updateState({ title: e.target.value })}
               className={formErrors.title ? "border-red-500" : ""}
             />
             {formErrors.title && (
@@ -166,51 +255,66 @@ function MarkdownEditor() {
             )}
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="course">Course</Label>
-            <div className="relative">
-              <select
-                id="course"
-                value={courseId}
-                onChange={(e) => setCourseId(e.target.value)}
-                className={`w-full rounded-md border px-3 py-2 text-sm ${
-                  formErrors.courseId
-                    ? "border-red-500 focus:border-red-500"
-                    : "border-input focus:border-primary"
-                } bg-transparent focus:outline-none focus:ring-1 focus:ring-primary`}
-              >
-                <option value="" disabled>
-                  Select a course
-                </option>
-                {COURSES.map((course) => (
-                  <option key={course.id} value={course.id.toString()}>
-                    {course.title}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            </div>
-            {formErrors.courseId && (
-              <p className="text-sm text-red-500 dark:text-red-400">
-                {formErrors.courseId}
-              </p>
-            )}
-          </div>
+          // Update only the select element and its container:
+
+<div className="space-y-2">
+  <Label htmlFor="course">Course</Label>
+  <div className="relative">
+    <select
+      id="course"
+      value={courseId}
+      onChange={(e) => updateState({ courseId: e.target.value })}
+      disabled={coursesLoading}
+      className={`w-full rounded-md border px-3 py-2 text-sm ${
+        formErrors.courseId
+          ? "border-red-500 focus:border-red-500"
+          : "border-input focus:border-primary"
+      } bg-transparent focus:outline-none focus:ring-1 focus:ring-primary ${
+        coursesLoading ? "opacity-70 cursor-not-allowed" : ""
+      } appearance-none`} // Added appearance-none to hide default arrow
+    >
+      <option value="" disabled>
+        {coursesLoading ? "Loading courses..." : "Select a course"}
+      </option>
+      
+      {/* Use our CourseOptions component */}
+      <CourseOptions topics={topics} />
+    </select>
+    
+    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+      {coursesLoading ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+          <path
+            fillRule="evenodd"
+            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+            clipRule="evenodd"
+          />
+        </svg>
+      )}
+    </div>
+  </div>
+  {formErrors.courseId && (
+    <p className="text-sm text-red-500 dark:text-red-400">
+      {formErrors.courseId}
+    </p>
+  )}
+  
+  {usingSampleData && (
+    <p className="text-xs text-amber-500 mt-1">
+      Using sample course data - API unavailable
+    </p>
+  )}
+</div>
         </div>
         
         <div className="space-y-2">
           <Label>Content</Label>
           <div className="flex border rounded-md overflow-hidden mb-4">
             <button
-              onClick={() => setActiveTab('edit')}
+              type="button"
+              onClick={() => updateState({ activeTab: 'edit' })}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === 'edit'
                   ? 'bg-primary text-primary-foreground'
@@ -241,7 +345,8 @@ function MarkdownEditor() {
               <span className="hidden sm:inline">Edit</span>
             </button>
             <button
-              onClick={() => setActiveTab('preview')}
+              type="button"
+              onClick={() => updateState({ activeTab: 'preview' })}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === 'preview'
                   ? 'bg-primary text-primary-foreground'
@@ -274,17 +379,19 @@ function MarkdownEditor() {
           </div>
           
           {activeTab === 'edit' ? (
-            <div data-color-mode={editorColorMode} className={formErrors.content ? "border border-red-500 rounded-md" : ""}>
-              <MDEditor
-                value={content}
-                onChange={setContent}
-                height={400}
-                preview="edit"
-                className="border border-border rounded-md shadow-sm"
-                textareaProps={{
-                  placeholder: "Write your markdown content here..."
-                }}
-              />
+            <div className="flex flex-col">
+              <div data-color-mode={editorColorMode} className={formErrors.content ? "border border-red-400 dark:border-red-600 rounded-md" : ""}>
+                <MDEditor
+                  value={content}
+                  onChange={(value) => updateState({ content: value || "" })}
+                  height={400}
+                  preview="edit"
+                  className="border border-border rounded-md shadow-sm"
+                  textareaProps={{
+                    placeholder: "Write your markdown content here..."
+                  }}
+                />
+              </div>
               {formErrors.content && (
                 <p className="text-sm text-red-500 dark:text-red-400 mt-2">
                   {formErrors.content}
@@ -308,10 +415,14 @@ function MarkdownEditor() {
       <CardFooter className="border-t pt-4 flex justify-center">
         <Button
           onClick={handleSubmit}
-          disabled={isSubmitting || Object.keys(formErrors).length > 0}
+          disabled={isSubmitting || Object.keys(formErrors).length > 0 || coursesLoading}
           className="gap-2 w-full sm:w-2/3 md:w-1/2"
         >
-          <Send className="h-3 w-3 sm:h-4 sm:w-4" />
+          {isSubmitting ? (
+            <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+          ) : (
+            <Send className="h-3 w-3 sm:h-4 sm:w-4" />
+          )}
           <span className="text-sm sm:text-base">
             {isSubmitting ? "Submitting..." : "Submit Content"}
           </span>
@@ -321,4 +432,4 @@ function MarkdownEditor() {
   );
 }
 
-export default MarkdownEditor;
+export default ContentCreator;
