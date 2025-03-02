@@ -163,10 +163,10 @@ export default function CourseDetailPage() {
           )
         );
         
-        toast.success(result.liked ? 'Post liked!' : 'Post unliked!', {
-          position: 'top-center',
-          duration: 1500
-        });
+        // toast.success(result.liked ? 'Post liked!' : 'Post unliked!', {
+        //   position: 'top-center',
+        //   duration: 1500
+        // });
       }
     } catch (error) {
       console.error('Error toggling like:', error);
@@ -211,10 +211,10 @@ export default function CourseDetailPage() {
         ]
       }));
       
-      toast.success('Comment added!', {
-        position: 'top-center',
-        duration: 1500
-      });
+      // toast.success('Comment added!', {
+      //   position: 'top-center',
+      //   duration: 1500
+      // });
     } catch (error) {
       console.error('Error adding comment:', error);
       toast.error('Failed to add comment');

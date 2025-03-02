@@ -152,10 +152,10 @@ const handleLikePost = async () => {
         };
       });
       
-      toast.success(result.liked ? 'Post liked!' : 'Post unliked!', {
-        position: 'top-center',
-        duration: 1500
-      });
+      // toast.success(result.liked ? 'Post liked!' : 'Post unliked!', {
+      //   position: 'top-center',
+      //   duration: 1500
+      // });
     }
   } catch (error) {
     console.error('Error toggling like:', error);
@@ -206,10 +206,10 @@ const handleLikePost = async () => {
       // Add the new comment to the top of the list
       setComments(prevComments => [newComment, ...prevComments]);
       
-      toast.success('Comment added!', {
-        position: 'top-center',
-        duration: 1500
-      });
+      // toast.success('Comment added!', {
+      //   position: 'top-center',
+      //   duration: 1500
+      // });
     } catch (error) {
       console.error('Error adding comment:', error);
       toast.error('Failed to add comment');

@@ -233,10 +233,10 @@ export function PostsSection() {
           )
         );
 
-        toast.success(result.liked ? 'Post liked!' : 'Post unliked!', {
-          position: 'top-center',
-          duration: 1500
-        });
+        // toast.success(result.liked ? 'Post liked!' : 'Post unliked!', {
+        //   position: 'top-center',
+        //   duration: 1500
+        // });
       }
     } catch (error) {
       console.error('Error toggling like:', error);
