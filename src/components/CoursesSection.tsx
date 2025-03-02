@@ -260,7 +260,7 @@ const handleToggleFavorite = async (courseId: number) => {
             {/* Favorites Section */}
             {favoritesList.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium text-yellow-500 dark:text-yellow-400 mb-2">
+                <h3 className="text-sm font-medium mt-3 text-yellow-500 dark:text-yellow-400 mb-2">
                   Favorites
                 </h3>
                 <div className="space-y-1 mb-6">

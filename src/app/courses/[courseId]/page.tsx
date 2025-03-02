@@ -8,7 +8,7 @@ import { fetchPosts, togglePostLike, getComments, addComment } from '@/services/
 import { fetchTopicsWithCourses, Course } from '@/services/courseService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, ThumbsUp, MessageSquare, Clock, Loader2, ArrowLeft, Share2 } from 'lucide-react';
+import { AlertTriangle, ThumbsUp, MessageSquare, Clock, Loader2, ArrowLeft, Share2, ArrowUpDown } from 'lucide-react';
 import Link from 'next/link';
 import MDEditor from "@uiw/react-md-editor";
 import { cn } from "@/lib/utils";
@@ -74,6 +74,7 @@ export default function CourseDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usingSampleData, setUsingSampleData] = useState(false);
+  const [sortByLikes, setSortByLikes] = useState(false);
   
   // Comment state
   const [expandedCommentId, setExpandedCommentId] = useState<string | null>(null);
@@ -112,7 +113,8 @@ export default function CourseDetailPage() {
         
         // Now load posts for this course specifically
         const { posts: coursePosts, usingSampleData: usingPostsSampleData } = await fetchPosts({ 
-          course_id: courseId 
+          course_id: courseId,
+          sortByLikes: sortByLikes // Add sorting parameter
         });
         
         setPosts(coursePosts);
@@ -130,7 +132,7 @@ export default function CourseDetailPage() {
     if (courseId && !isNaN(courseId)) {
       loadCourseAndPosts();
     }
-  }, [courseId]);
+  }, [courseId, sortByLikes]);
 
   // Handle like post - match home page functionality
   const handleLikePost = async (postId: string) => {
@@ -305,7 +307,7 @@ export default function CourseDetailPage() {
                 <div>
                   <CardTitle>Course Posts</CardTitle>
                   <CardDescription>
-                    Posts related to this course
+                    {sortByLikes ? "Most liked content" : "Recently added content"}
                     {usingSampleData && (
                       <span className="ml-2 text-xs text-amber-500 font-medium">
                         (Using sample data - API unavailable)
@@ -314,11 +316,25 @@ export default function CourseDetailPage() {
                   </CardDescription>
                 </div>
                 
-                {isSignedIn && (
-                  <Link href={`/posts/create?course_id=${courseId}`}>
-                    <Button size="sm">New Post</Button>
-                  </Link>
-                )}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => setSortByLikes(!sortByLikes)}
+                  >
+                    <ArrowUpDown className="h-4 w-4" />
+                    <span className="hidden sm:inline">
+                      {sortByLikes ? "Show Latest" : "Show Trending"}
+                    </span>
+                  </Button>
+                  
+                  {isSignedIn && (
+                    <Link href={`/posts/create?course_id=${courseId}`}>
+                      <Button size="sm">New Post</Button>
+                    </Link>
+                  )}
+                </div>
               </div>
             </CardHeader>
             

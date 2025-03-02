@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from './ui/button';
-import { ThumbsUp, MessageSquare, Share2, Loader2, AlertTriangle, Clock } from 'lucide-react';
+import { ThumbsUp, MessageSquare, Share2, Loader2, AlertTriangle, Clock, SwitchVertical } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
 import { fetchPosts, Post, togglePostLike, addComment, getComments } from '@/services/postService';

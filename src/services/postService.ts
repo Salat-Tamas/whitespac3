@@ -61,7 +61,8 @@ const SAMPLE_POSTS: Post[] = [
 export async function fetchPosts({
   sortByLikes = false,
   limit = 10,
-  course_id
+  course_id,
+  sort_by_likes
 }: {
   sortByLikes?: boolean;
   limit?: number;
