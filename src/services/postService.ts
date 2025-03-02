@@ -65,7 +65,7 @@ export async function fetchPosts({
 }: {
   sortByLikes?: boolean;
   limit?: number;
-  coruse_id?:number;
+  course_id?: number;
 } = {}): Promise<{
   posts: Post[];
   error: string | null;

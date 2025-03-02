@@ -89,6 +89,9 @@ export function PostsSection() {
   const { resolvedTheme } = useTheme();
   const isDarkMode = resolvedTheme === 'dark';
 
+  const [trendingPosts, setTrendingPosts] = useState<Post[]>([]);
+  const [trendingLoading, setTrendingLoading] = useState(true);
+
   // Fetch course data
   useEffect(() => {
     async function loadCourses() {
@@ -195,6 +198,28 @@ export function PostsSection() {
     loadPosts();
   }, [clerk?.users, postsLimit]);
 
+  // Separate fetch for trending posts
+  useEffect(() => {
+    const loadTrendingPosts = async () => {
+      try {
+        setTrendingLoading(true);
+        
+        const { posts: fetchedPosts } = await fetchPosts({ 
+          sortByLikes: true, // Sort by likes
+          limit: 3 // Changed from 5 to 3
+        });
+        
+        setTrendingPosts(fetchedPosts);
+      } catch (err) {
+        console.error('Error loading trending posts:', err);
+      } finally {
+        setTrendingLoading(false);
+      }
+    };
+
+    loadTrendingPosts();
+  }, []);
+
   // Get course name from ID using the dynamic courses data
   const getCourseName = (courseId: number): string => {
     if (coursesMap[courseId]) {
@@ -203,14 +228,17 @@ export function PostsSection() {
     return `Course ${courseId}`;
   };
 
-  const handleLikePost = async (postId: string) => {
+  const handleLikePost = async (postId: string, isTrending: boolean) => {
     if (!userId) {
       toast.error('Please sign in to like posts', { position: 'top-center' });
       return;
     }
 
     try {
-      const currentPost = posts.find(post => post.id === postId);
+      const currentPost = isTrending 
+        ? trendingPosts.find(post => post.id === postId)
+        : posts.find(post => post.id === postId);
+
       if (!currentPost) return;
 
       const result = await togglePostLike(
@@ -221,22 +249,32 @@ export function PostsSection() {
       );
       
       if (result.success) {
-        setPosts(currentPosts => 
-          currentPosts.map(post => 
-            post.id === postId 
-              ? { 
-                  ...post, 
-                  liked_by_user: result.liked,
-                  like_count: result.likeCount
-                } 
-              : post
-          )
-        );
-
-        // toast.success(result.liked ? 'Post liked!' : 'Post unliked!', {
-        //   position: 'top-center',
-        //   duration: 1500
-        // });
+        // Update the correct post list based on isTrending
+        if (isTrending) {
+          setTrendingPosts(currentPosts => 
+            currentPosts.map(post => 
+              post.id === postId 
+                ? { 
+                    ...post, 
+                    liked_by_user: result.liked,
+                    like_count: result.likeCount
+                  } 
+                : post
+            )
+          );
+        } else {
+          setPosts(currentPosts => 
+            currentPosts.map(post => 
+              post.id === postId 
+                ? { 
+                    ...post, 
+                    liked_by_user: result.liked,
+                    like_count: result.likeCount
+                  } 
+                : post
+            )
+          );
+        }
       }
     } catch (error) {
       console.error('Error toggling like:', error);
@@ -282,14 +320,15 @@ export function PostsSection() {
     }
   };
 
-  return (
-    <Card>
+  // Helper function to render posts list
+  const renderPosts = (postsToRender: Post[], isLoading: boolean, title: string, description: string, isTrending: boolean) => (
+    <Card className="mb-6">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle>Latest Posts</CardTitle>
+          <CardTitle>{title}</CardTitle>
         </div>
         <CardDescription>
-          Trending educational content
+          {description}
           {usingSampleData && apiAttempted && (
             <span className="ml-2 text-xs text-amber-500 font-medium">
               (Using sample data - API unavailable)
@@ -298,49 +337,22 @@ export function PostsSection() {
         </CardDescription>
       </CardHeader>
       
-      {usingSampleData && apiAttempted && (
-        <CardContent className="pt-0 pb-1">
-          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 
-                        dark:border-amber-800 text-amber-800 dark:text-amber-200 
-                        rounded-md p-3 text-sm flex items-start">
-            <AlertTriangle className="h-4 w-4 mt-0.5 mr-2 flex-shrink-0" />
-            <div>
-              Unable to connect to <code className="bg-amber-100 dark:bg-amber-900/40 px-1 
-                                                 py-0.5 rounded">fokakefir.go.ro</code>. 
-              Displaying sample post data for development purposes.
-            </div>
-          </div>
-        </CardContent>
-      )}
+      {/* ...existing sample data warning... */}
       
       <CardContent>
-        {isLoading || coursesLoading ? (
+        {isLoading ? (
           <div className="flex justify-center items-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <span className="ml-2 text-sm text-muted-foreground">
-              {isLoading ? "Loading posts..." : "Loading course data..."}
-            </span>
-          </div>
-        ) : error && !usingSampleData ? (
-          <div className="py-6 text-center">
-            <p className="text-sm text-red-500">{error}</p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="mt-2"
-              onClick={() => window.location.reload()}
-            >
-              Try Again
-            </Button>
+            <span className="ml-2 text-sm text-muted-foreground">Loading posts...</span>
           </div>
         ) : (
           <div className="space-y-4">
-            {posts.length === 0 ? (
+            {postsToRender.length === 0 ? (
               <p className="text-center py-4 text-sm text-muted-foreground">
                 No posts available
               </p>
             ) : (
-              posts.map((post) => (
+              postsToRender.map((post) => (
                 <div key={post.id} className="border rounded-md p-4 bg-card relative">
                   {/* Relative time indicator */}
                   <div className="absolute top-3 right-3 text-xs text-muted-foreground flex items-center">
@@ -370,7 +382,7 @@ export function PostsSection() {
                     </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <button 
-                      onClick={() => handleLikePost(post.id)}
+                      onClick={() => handleLikePost(post.id, isTrending)}
                       className={cn(
                         "flex items-center gap-2 px-2 py-1 rounded-md transition-all",
                         "hover:bg-primary/10",
@@ -430,39 +442,60 @@ export function PostsSection() {
                 </div>
               ))
             )}
-
-<div className="flex justify-center mt-6">
-  {posts.length > 0 && (
-    hasMore ? (
-      <Button
-        variant="outline"
-        size="sm"
-        className="gap-2"
-        onClick={() => setPostsLimit(prevLimit => prevLimit + 10)}
-        disabled={loadingMore}
-      >
-        {loadingMore ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Loading more...</span>
-          </>
-        ) : (
-          <>
-            <span>View more posts</span>
-          </>
+          </div>
         )}
-      </Button>
-    ) : (
-      <div className="text-sm text-muted-foreground">
-        No more posts to load
-      </div>
-    )
-  )}
-</div>
+        
+        {/* Add View More button only for Latest Posts section */}
+        {!isTrending && posts.length > 0 && (
+          <div className="flex justify-center mt-6">
+            {hasMore ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => setPostsLimit(prevLimit => prevLimit + 5)}
+                disabled={loadingMore}
+              >
+                {loadingMore ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Loading more...</span>
+                  </>
+                ) : (
+                  <span>View more posts</span>
+                )}
+              </Button>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                No more posts to load
+              </div>
+            )}
           </div>
         )}
       </CardContent>
     </Card>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Trending Posts Section */}
+      {renderPosts(
+        trendingPosts,
+        trendingLoading,
+        "Trending Posts",
+        "Most liked content",
+        true
+      )}
+
+      {/* Latest Posts Section */}
+      {renderPosts(
+        posts,
+        isLoading || coursesLoading,
+        "Latest Posts",
+        "Recently added content",
+        false
+      )}
+    </div>
   );
 }
 
