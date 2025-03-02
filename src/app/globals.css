@@ -227,7 +227,7 @@
 /* Preview section */
 .wmde-markdown {
   background: transparent !important;
-  padding: 1rem !important;
+  padding: 0rem !important;
 }
 
 /* Code blocks in preview */
