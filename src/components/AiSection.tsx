@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { MessageSquare, Send, Loader2 } from 'lucide-react';
 import { Textarea } from "./ui/textarea"; // Add this import
@@ -15,8 +15,10 @@ interface AiSectionProps {
 function AiSection({ markdown = "" }: AiSectionProps) {
   const [prompt, setPrompt] = useState('');
   const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://fokakefir.go.ro:80/chat_ws';
-  const { messages, sendMessage, isConnected } = useWebSocket({ url: wsUrl });
+  const { messages, sendMessage, isConnected, isProcessing } = useWebSocket({ url: wsUrl }); // Add isProcessing
   const { resolvedTheme } = useTheme();
+
+  // Remove local isTyping state and its effects since we're using isProcessing from the hook
 
   const handleSendMessage = () => {
     if (prompt.trim()) {
@@ -99,6 +101,20 @@ function AiSection({ markdown = "" }: AiSectionProps) {
               </div>
             </div>
           ))}
+          
+          {isProcessing && ( // Use isProcessing instead of isTyping
+            <div className="flex">
+              <div className="bg-primary h-8 w-8 rounded-full flex items-center justify-center text-primary-foreground font-bold mr-2">
+                AI
+              </div>
+              <div className="bg-muted p-3 rounded-lg rounded-tl-none max-w-[80%]">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm text-muted-foreground">AI is thinking...</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
 
