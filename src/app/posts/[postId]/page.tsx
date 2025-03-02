@@ -323,7 +323,7 @@ const handleLikePost = async () => {
             <CardContent className="pt-0">
             <div className="prose dark:prose-invert prose-sm max-w-none mb-3 p-4 bg-white dark:bg-[#0d1117] rounded-md" data-color-mode={isDarkMode ? 'dark' : 'light'}>
                     <MDEditor.Markdown 
-                      source={post.preview_md} 
+                      source={post.content_md} 
                       rehypePlugins={[]}
                     />
                     </div>

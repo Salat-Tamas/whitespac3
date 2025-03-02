@@ -192,22 +192,24 @@
   background-color: hsl(var(--border)) !important;
 }
 
-/* Markdown Editor Internal Styles */
+/* Markdown Editor Internal Styles - Updated */
 .w-md-editor {
   --md-editor-bg-color: hsl(var(--background)) !important;
   --md-editor-text-color: hsl(var(--foreground)) !important;
 }
 
-/* Editor text area and preview */
-.w-md-editor-text {
-  padding: 1rem !important;
+
+/* Keep existing theme styles */
+.w-md-editor-toolbar {
+  background: hsl(var(--background)) !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
 }
 
-.w-md-editor-text-pre,
-.w-md-editor-text-input {
-  padding: 0.5rem !important;
-  line-height: 1.5 !important;
-  font-size: 0.875rem !important;
+
+/* Keep toolbar styling */
+.w-md-editor-toolbar {
+  background: hsl(var(--background)) !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
 }
 
 /* Editor toolbar */
@@ -234,5 +236,4 @@
 .wmde-markdown-var pre {
   background: hsl(var(--muted)) !important;
   border: 1px solid hsl(var(--border)) !important;
-  padding: 1rem !important;
 }
