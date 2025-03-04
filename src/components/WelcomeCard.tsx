@@ -8,7 +8,7 @@ function WelcomeCard() {
   return (
     <Card>
           <CardHeader>
-            <CardTitle>Welcome to Whitespac3 Learning</CardTitle>
+            <CardTitle>Welcome to <p className="font-bold font-mono inline text-lg pl-2">The Knowledge Vault</p></CardTitle>
             <CardDescription>Your educational journey begins here</CardDescription>
           </CardHeader>
           <CardContent>
